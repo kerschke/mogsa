@@ -49,7 +49,7 @@ If you like our proposed gradient-field heatmaps, cite our [EMO 2017 paper](http
   pages     = {329~--~343},
   series    = {{Lecture Notes in Computer Science (LNCS)}},
   volume    = {11411},
-  editor    = {Heike Trautmann and Günter Rudolph and Kathrin Klamroth and Oliver Schütze and Margaret Wiecek and Yaochu Jin and Christian Grimme},
+  editor    = {Heike Trautmann and G{\"u}nter Rudolph and Kathrin Klamroth and Oliver Sch{\"u}tze and Margaret Wiecek and Yaochu Jin and Christian Grimme},
   year      = {2017},
   publisher = {Springer},
   address   = {M{\"u}nster, Germany},
@@ -65,7 +65,7 @@ If you like our proposed gradient-field heatmaps, cite our [EMO 2017 paper](http
   pages     = {126~--~138},
   series    = {{Lecture Notes in Computer Science (LNCS)}},
   volume    = {11411},
-  editor    = {Kalyanmoy Deb and Erik Goodman and Coello Carlos A. Coello and Kathrin Klamroth and Kaisa Miettinen and Sanaz Mostaghim and Patrick Reed},
+  editor    = {Kalyanmoy Deb and Erik Goodman and Carlos A. {Coello Coello} and Kathrin Klamroth and Kaisa Miettinen and Sanaz Mostaghim and Patrick Reed},
   year      = {2019},
   publisher = {Springer},
   location  = {{East Lansing}, {MI}, {USA}},
@@ -78,6 +78,6 @@ If you like our proposed gradient-field heatmaps, cite our [EMO 2017 paper](http
 ## Contact
 
 If you have any suggestions or ideas, or run into problems while running the code, please
-use the [issue tracker](https://github.com/kerschke/mogsa/issues) or send me an e-mail <kerschke@uni-muenster.de>.
+use the [issue tracker](https://github.com/kerschke/mogsa/issues) or send me an e-mail (<kerschke@uni-muenster.de>).
 
 
