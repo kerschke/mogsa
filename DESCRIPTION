@@ -2,12 +2,14 @@ Package: mogsa
 Type: Package
 Title: A Multi-Objective Optimization Algorithm Based on Multi-Objective Gradients
 Version: 1.0
-Date: 2018-10-26
+Date: 2019-05-05
 Author: person("Pascal", "Kerschke", email = "kerschke@uni-muenster.de", role = c("aut", "cre"))
 Maintainer: Pascal Kerschke <kerschke@uni-muenster.de>
 Description: This package provides the Multi-Objective Gradient Sliding Algorithm (MOGSA), which
     efficiently exploits local efficient sets (i.e., local optima of multi-objective problems)
     to maneuver towards the problem's global efficient sets (= multi-objective global optima).
+    In addition, it also contains functions for visualizing the gradient landscapes of bi-objective
+    optimization problems.
 Depends: 
     checkmate (>= 1.1)
 Imports: 
@@ -26,4 +28,4 @@ BugReports: https://github.com/kerschke/mogsa/issues
 License: BSD_2_clause + file LICENSE
 LazyData: yes
 ByteCompile: yes
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1

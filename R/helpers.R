@@ -33,7 +33,7 @@ addArrowsToPlot = function(points, gradients, fac = 0.01 / 2, length = 0.01, ...
 # 
 #   elliptical = (shape1 != "sphere") | (shape2 != "sphere") | (shape3 != "sphere")
 #   if (elliptical) {
-#     eval(rPython::python.load(system.file("mpm2.py", package = "mogsa2")), envir = .GlobalEnv)
+#     eval(rPython::python.load(system.file("mpm2.py", package = "mogsa")), envir = .GlobalEnv)
 #   }
 # 
 #   ## needed for the python function that extracts the covariances

@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // assureBoundsCPP
 NumericVector assureBoundsCPP(NumericVector ind, NumericVector g, NumericVector lower, NumericVector upper);
-RcppExport SEXP _mogsa2_assureBoundsCPP(SEXP indSEXP, SEXP gSEXP, SEXP lowerSEXP, SEXP upperSEXP) {
+RcppExport SEXP _mogsa_assureBoundsCPP(SEXP indSEXP, SEXP gSEXP, SEXP lowerSEXP, SEXP upperSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -21,7 +21,7 @@ END_RCPP
 }
 // computeVectorLengthCPP
 double computeVectorLengthCPP(NumericVector vec);
-RcppExport SEXP _mogsa2_computeVectorLengthCPP(SEXP vecSEXP) {
+RcppExport SEXP _mogsa_computeVectorLengthCPP(SEXP vecSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -32,7 +32,7 @@ END_RCPP
 }
 // normalizeVectorCPP
 NumericVector normalizeVectorCPP(NumericVector vec, double prec);
-RcppExport SEXP _mogsa2_normalizeVectorCPP(SEXP vecSEXP, SEXP precSEXP) {
+RcppExport SEXP _mogsa_normalizeVectorCPP(SEXP vecSEXP, SEXP precSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -44,7 +44,7 @@ END_RCPP
 }
 // computeAngleCPP
 double computeAngleCPP(NumericVector vec1, NumericVector vec2, double prec);
-RcppExport SEXP _mogsa2_computeAngleCPP(SEXP vec1SEXP, SEXP vec2SEXP, SEXP precSEXP) {
+RcppExport SEXP _mogsa_computeAngleCPP(SEXP vec1SEXP, SEXP vec2SEXP, SEXP precSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -57,7 +57,7 @@ END_RCPP
 }
 // findNextCellCPP
 IntegerVector findNextCellCPP(double angle);
-RcppExport SEXP _mogsa2_findNextCellCPP(SEXP angleSEXP) {
+RcppExport SEXP _mogsa_findNextCellCPP(SEXP angleSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -68,7 +68,7 @@ END_RCPP
 }
 // convertIndices2CellIDCPP
 int convertIndices2CellIDCPP(int rowIndex, int columnIndex, int nRows, int nColumns);
-RcppExport SEXP _mogsa2_convertIndices2CellIDCPP(SEXP rowIndexSEXP, SEXP columnIndexSEXP, SEXP nRowsSEXP, SEXP nColumnsSEXP) {
+RcppExport SEXP _mogsa_convertIndices2CellIDCPP(SEXP rowIndexSEXP, SEXP columnIndexSEXP, SEXP nRowsSEXP, SEXP nColumnsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -82,7 +82,7 @@ END_RCPP
 }
 // convertCellID2IndicesCPP
 IntegerVector convertCellID2IndicesCPP(int cellID, int nRows, int nColumns);
-RcppExport SEXP _mogsa2_convertCellID2IndicesCPP(SEXP cellIDSEXP, SEXP nRowsSEXP, SEXP nColumnsSEXP) {
+RcppExport SEXP _mogsa_convertCellID2IndicesCPP(SEXP cellIDSEXP, SEXP nRowsSEXP, SEXP nColumnsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -95,7 +95,7 @@ END_RCPP
 }
 // cumulateGradientsCPP
 NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm);
-RcppExport SEXP _mogsa2_cumulateGradientsCPP(SEXP centersSEXP, SEXP gradientsSEXP, SEXP precVectorLengthSEXP, SEXP precNormSEXP) {
+RcppExport SEXP _mogsa_cumulateGradientsCPP(SEXP centersSEXP, SEXP gradientsSEXP, SEXP precVectorLengthSEXP, SEXP precNormSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -109,18 +109,18 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_mogsa2_assureBoundsCPP", (DL_FUNC) &_mogsa2_assureBoundsCPP, 4},
-    {"_mogsa2_computeVectorLengthCPP", (DL_FUNC) &_mogsa2_computeVectorLengthCPP, 1},
-    {"_mogsa2_normalizeVectorCPP", (DL_FUNC) &_mogsa2_normalizeVectorCPP, 2},
-    {"_mogsa2_computeAngleCPP", (DL_FUNC) &_mogsa2_computeAngleCPP, 3},
-    {"_mogsa2_findNextCellCPP", (DL_FUNC) &_mogsa2_findNextCellCPP, 1},
-    {"_mogsa2_convertIndices2CellIDCPP", (DL_FUNC) &_mogsa2_convertIndices2CellIDCPP, 4},
-    {"_mogsa2_convertCellID2IndicesCPP", (DL_FUNC) &_mogsa2_convertCellID2IndicesCPP, 3},
-    {"_mogsa2_cumulateGradientsCPP", (DL_FUNC) &_mogsa2_cumulateGradientsCPP, 4},
+    {"_mogsa_assureBoundsCPP", (DL_FUNC) &_mogsa_assureBoundsCPP, 4},
+    {"_mogsa_computeVectorLengthCPP", (DL_FUNC) &_mogsa_computeVectorLengthCPP, 1},
+    {"_mogsa_normalizeVectorCPP", (DL_FUNC) &_mogsa_normalizeVectorCPP, 2},
+    {"_mogsa_computeAngleCPP", (DL_FUNC) &_mogsa_computeAngleCPP, 3},
+    {"_mogsa_findNextCellCPP", (DL_FUNC) &_mogsa_findNextCellCPP, 1},
+    {"_mogsa_convertIndices2CellIDCPP", (DL_FUNC) &_mogsa_convertIndices2CellIDCPP, 4},
+    {"_mogsa_convertCellID2IndicesCPP", (DL_FUNC) &_mogsa_convertCellID2IndicesCPP, 3},
+    {"_mogsa_cumulateGradientsCPP", (DL_FUNC) &_mogsa_cumulateGradientsCPP, 4},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_mogsa2(DllInfo *dll) {
+RcppExport void R_init_mogsa(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

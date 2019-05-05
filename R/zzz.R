@@ -1,4 +1,4 @@
-#' @useDynLib mogsa2, .registration = TRUE
+#' @useDynLib mogsa, .registration = TRUE
 #' @import BBmisc
 #' @import checkmate
 #' @import ggplot2
