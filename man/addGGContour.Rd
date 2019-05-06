@@ -4,8 +4,9 @@
 \alias{addGGContour}
 \title{Add Contour Lines to Gradient Field Heatmap.}
 \usage{
-addGGContour(g, lower, upper, fn1, fn2, fn3, col1 = "goldenrod1",
-  col2 = "white", col3 = "cyan3", ...)
+addGGContour(g, lower, upper, fn1, fn2, fn3, log.scale = TRUE,
+  col1 = "goldenrod1", col2 = "white", col3 = "cyan3",
+  n.points = 30L, ...)
 }
 \arguments{
 \item{g}{[\code{ggplot}]\cr
@@ -26,6 +27,9 @@ The second objective used for computing the multi-objective gradient.}
 \item{fn3}{[\code{\link{function}}]\cr
 The third objective (if existing) used for computing the multi-objective gradient.}
 
+\item{log.scale}{[\code{\link{logical}(1L)}]\cr
+Should the resulting heights be displayed on a log-scale? The default is \code{TRUE}.}
+
 \item{col1}{[\code{\link{character}(1L)}]\cr
 Color used for the contour lines of the first objective (default: \code{"goldenrod1"}).}
 
@@ -34,6 +38,9 @@ Color used for the contour lines of the second objective (default: \code{"white"
 
 \item{col3}{[\code{\link{character}(1L)}]\cr
 Color used for the contour lines of the third objective (default: \code{"cyan3"}).}
+
+\item{n.points}{[\code{\link{integer}(1L)}]\cr
+Number of points used for computing the contour lines. The default is \code{30L}.}
 
 \item{...}{[any]\cr
 Further arguments to be passed to the \code{geom_tile} function of \code{ggplot}.}

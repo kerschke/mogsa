@@ -10,12 +10,16 @@
 #' @template arg_fni
 #' @param fn3 [\code{\link{function}}]\cr
 #'   The third objective (if existing) used for computing the multi-objective gradient.
+#' @param log.scale [\code{\link{logical}(1L)}]\cr
+#'   Should the resulting heights be displayed on a log-scale? The default is \code{TRUE}.
 #' @param col1 [\code{\link{character}(1L)}]\cr
 #'   Color used for the contour lines of the first objective (default: \code{"goldenrod1"}).
 #' @param col2 [\code{\link{character}(1L)}]\cr
 #'   Color used for the contour lines of the second objective (default: \code{"white"}).
 #' @param col3 [\code{\link{character}(1L)}]\cr
 #'   Color used for the contour lines of the third objective (default: \code{"cyan3"}).
+#' @param n.points [\code{\link{integer}(1L)}]\cr
+#'   Number of points used for computing the contour lines. The default is \code{30L}.
 #' @param ... [any]\cr
 #'   Further arguments to be passed to the \code{geom_tile} function of \code{ggplot}.
 #' @return [\code{ggplot}]\cr
@@ -38,8 +42,8 @@
 #' addGGContour(g = g, lower = c(0, 0), upper = c(0.7, 1.25),
 #'   fn1 = fn1, fn2 = fn2, linetype = "dashed")
 #' @export
-addGGContour = function(g, lower, upper, fn1, fn2, fn3,
-  col1 = "goldenrod1", col2 = "white", col3 = "cyan3", ...) {
+addGGContour = function(g, lower, upper, fn1, fn2, fn3, log.scale = TRUE,
+  col1 = "goldenrod1", col2 = "white", col3 = "cyan3", n.points = 30L, ...) {
 
   assertClass(x = g, classes = "ggplot")
   assertNumeric(x = lower, len = 2L, finite = TRUE, any.missing = FALSE)
@@ -51,14 +55,17 @@ addGGContour = function(g, lower, upper, fn1, fn2, fn3,
 
   ## create a help grid, based on which the contour lines are constructed
   x.grid = expand.grid(
-    x1 = seq(lower[1L], upper[1L], length.out = 30L),
-    x2 = seq(lower[2L], upper[2L], length.out = 30L))
+    x1 = seq(lower[1L], upper[1L], length.out = n.points),
+    x2 = seq(lower[2L], upper[2L], length.out = n.points))
   attr(x.grid, "out.attrs") = NULL
 
   ## add contour lines for first objective
   if (!missing(fn1)) {
     assertFunction(fn1)
     x.grid$y1 = apply(as.matrix(x.grid[, 1:2]), 1L, fn1)
+    if (log.scale) {
+      x.grid$y1 = log10(x.grid$y1)
+    }
     g = g +
       geom_contour(data = x.grid, mapping = aes_string(x = "x1", y = "x2", z = "y1"), colour = col1, ...)
   }
@@ -67,6 +74,9 @@ addGGContour = function(g, lower, upper, fn1, fn2, fn3,
   if (!missing(fn2)) {
     assertFunction(fn2)
     x.grid$y2 = apply(as.matrix(x.grid[, 1:2]), 1L, fn2)
+    if (log.scale) {
+      x.grid$y2 = log10(x.grid$y2)
+    }
     g = g +
       geom_contour(data = x.grid, mapping = aes_string(x = "x1", y = "x2", z = "y2"), colour = col2, ...)
   }
@@ -75,6 +85,9 @@ addGGContour = function(g, lower, upper, fn1, fn2, fn3,
   if (!missing(fn3)) {
     assertFunction(fn3)
     x.grid$y3 = apply(as.matrix(x.grid[, 1:2]), 1L, fn3)
+    if (log.scale) {
+      x.grid$y3 = log10(x.grid$y3)
+    }
     g = g +
       geom_contour(data = x.grid, mapping = aes_string(x = "x1", y = "x2", z = "y3"), colour = col3, ...)
   }
