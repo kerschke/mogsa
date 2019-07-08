@@ -45,15 +45,17 @@ computeCumulatedPathLengths = function(centers, gradients, prec.vector.length = 
       gradients = as.matrix(gradients)
     }
     # FIXME: so far, only supporting 2D-problems
-    assertMatrix(x = centers, mode = "numeric", ncols = 2, null.ok = FALSE)
-    assertMatrix(x = gradients, mode = "numeric", ncols = 2, null.ok = FALSE)
+    assertMatrix(x = centers, mode = "numeric", min.cols = 2L, null.ok = FALSE)
+    assertMatrix(x = gradients, mode = "numeric", min.cols = 2L, null.ok = FALSE)
     assertTRUE(all(dim(centers) == dim(gradients)))
-    index = order(centers[,2], centers[,1])
+    # index = order(centers[,2], centers[,1])
+    index = do.call(order, lapply(rev(seq_col(centers)), function(i) centers[,i]))
     if (any(index != seq_row(centers))) {
       centers = centers[index,,drop = FALSE]
       gradients = gradients[index,,drop = FALSE]
     }
-    assertTRUE(nrow(centers) == length(unique(centers[,1])) * length(unique(centers[,2])))
+    # assertTRUE(nrow(centers) == length(unique(centers[,1])) * length(unique(centers[,2])))
+    assertTRUE(nrow(centers) == prod(apply(as.matrix(centers), 2L, function(x) length(unique(x)))))
     assertNumber(prec.vector.length, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.norm, lower = 0, finite = TRUE, null.ok = FALSE)
   }

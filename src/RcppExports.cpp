@@ -56,40 +56,37 @@ BEGIN_RCPP
 END_RCPP
 }
 // findNextCellCPP
-IntegerVector findNextCellCPP(double angle);
-RcppExport SEXP _mogsa_findNextCellCPP(SEXP angleSEXP) {
+IntegerVector findNextCellCPP(NumericVector gradient);
+RcppExport SEXP _mogsa_findNextCellCPP(SEXP gradientSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type angle(angleSEXP);
-    rcpp_result_gen = Rcpp::wrap(findNextCellCPP(angle));
+    Rcpp::traits::input_parameter< NumericVector >::type gradient(gradientSEXP);
+    rcpp_result_gen = Rcpp::wrap(findNextCellCPP(gradient));
     return rcpp_result_gen;
 END_RCPP
 }
 // convertIndices2CellIDCPP
-int convertIndices2CellIDCPP(int rowIndex, int columnIndex, int nRows, int nColumns);
-RcppExport SEXP _mogsa_convertIndices2CellIDCPP(SEXP rowIndexSEXP, SEXP columnIndexSEXP, SEXP nRowsSEXP, SEXP nColumnsSEXP) {
+int convertIndices2CellIDCPP(IntegerVector indices, IntegerVector dims);
+RcppExport SEXP _mogsa_convertIndices2CellIDCPP(SEXP indicesSEXP, SEXP dimsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type rowIndex(rowIndexSEXP);
-    Rcpp::traits::input_parameter< int >::type columnIndex(columnIndexSEXP);
-    Rcpp::traits::input_parameter< int >::type nRows(nRowsSEXP);
-    Rcpp::traits::input_parameter< int >::type nColumns(nColumnsSEXP);
-    rcpp_result_gen = Rcpp::wrap(convertIndices2CellIDCPP(rowIndex, columnIndex, nRows, nColumns));
+    Rcpp::traits::input_parameter< IntegerVector >::type indices(indicesSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    rcpp_result_gen = Rcpp::wrap(convertIndices2CellIDCPP(indices, dims));
     return rcpp_result_gen;
 END_RCPP
 }
 // convertCellID2IndicesCPP
-IntegerVector convertCellID2IndicesCPP(int cellID, int nRows, int nColumns);
-RcppExport SEXP _mogsa_convertCellID2IndicesCPP(SEXP cellIDSEXP, SEXP nRowsSEXP, SEXP nColumnsSEXP) {
+IntegerVector convertCellID2IndicesCPP(int cellID, IntegerVector dims);
+RcppExport SEXP _mogsa_convertCellID2IndicesCPP(SEXP cellIDSEXP, SEXP dimsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type cellID(cellIDSEXP);
-    Rcpp::traits::input_parameter< int >::type nRows(nRowsSEXP);
-    Rcpp::traits::input_parameter< int >::type nColumns(nColumnsSEXP);
-    rcpp_result_gen = Rcpp::wrap(convertCellID2IndicesCPP(cellID, nRows, nColumns));
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    rcpp_result_gen = Rcpp::wrap(convertCellID2IndicesCPP(cellID, dims));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -114,8 +111,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mogsa_normalizeVectorCPP", (DL_FUNC) &_mogsa_normalizeVectorCPP, 2},
     {"_mogsa_computeAngleCPP", (DL_FUNC) &_mogsa_computeAngleCPP, 3},
     {"_mogsa_findNextCellCPP", (DL_FUNC) &_mogsa_findNextCellCPP, 1},
-    {"_mogsa_convertIndices2CellIDCPP", (DL_FUNC) &_mogsa_convertIndices2CellIDCPP, 4},
-    {"_mogsa_convertCellID2IndicesCPP", (DL_FUNC) &_mogsa_convertCellID2IndicesCPP, 3},
+    {"_mogsa_convertIndices2CellIDCPP", (DL_FUNC) &_mogsa_convertIndices2CellIDCPP, 2},
+    {"_mogsa_convertCellID2IndicesCPP", (DL_FUNC) &_mogsa_convertCellID2IndicesCPP, 2},
     {"_mogsa_cumulateGradientsCPP", (DL_FUNC) &_mogsa_cumulateGradientsCPP, 4},
     {NULL, NULL, 0}
 };

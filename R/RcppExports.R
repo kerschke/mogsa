@@ -17,16 +17,16 @@ computeAngleCPP <- function(vec1, vec2, prec) {
     .Call(`_mogsa_computeAngleCPP`, vec1, vec2, prec)
 }
 
-findNextCellCPP <- function(angle) {
-    .Call(`_mogsa_findNextCellCPP`, angle)
+findNextCellCPP <- function(gradient) {
+    .Call(`_mogsa_findNextCellCPP`, gradient)
 }
 
-convertIndices2CellIDCPP <- function(rowIndex, columnIndex, nRows = 100L, nColumns = 100L) {
-    .Call(`_mogsa_convertIndices2CellIDCPP`, rowIndex, columnIndex, nRows, nColumns)
+convertIndices2CellIDCPP <- function(indices, dims) {
+    .Call(`_mogsa_convertIndices2CellIDCPP`, indices, dims)
 }
 
-convertCellID2IndicesCPP <- function(cellID, nRows = 100L, nColumns = 100L) {
-    .Call(`_mogsa_convertCellID2IndicesCPP`, cellID, nRows, nColumns)
+convertCellID2IndicesCPP <- function(cellID, dims) {
+    .Call(`_mogsa_convertCellID2IndicesCPP`, cellID, dims)
 }
 
 cumulateGradientsCPP <- function(centers, gradients, precVectorLength, precNorm) {

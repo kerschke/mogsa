@@ -103,109 +103,308 @@ double computeAngleCPP(NumericVector vec1, NumericVector vec2, double prec) {
 }
 
 
+// // [[Rcpp::export]]
+// IntegerVector findNextCellCPP(double angle) {
+//   // which is the next cell one has to move to (based on the angle)?
+//   
+//   IntegerVector direction(2, 3);
+//   // ensure to only consider angles between 0 and 360 degrees
+//   while (angle < 360) {
+//     angle += 360.0;
+//   };
+//   angle = std::fmod(angle, 360.0);
+//   
+//   if ((angle > 22.5) & (angle <= 67.5)) {
+//     direction[0] = 1; // step in x-direction
+//     direction[1] = 1; // step in y-direction
+//   } else if ((angle > 67.5) & (angle <= 112.5)) {
+//     direction[0] = 1;
+//     direction[1] = 0;
+//   } else if ((angle > 112.5) & (angle <= 157.5)) {
+//     direction[0] = 1;
+//     direction[1] = -1;
+//   } else if ((angle > 157.5) & (angle <= 202.5)) {
+//     direction[0] = 0;
+//     direction[1] = -1;
+//   } else if ((angle > 202.5) & (angle <= 247.5)) {
+//     direction[0] = -1;
+//     direction[1] = -1;
+//   } else if ((angle > 247.5) & (angle <= 292.5)) {
+//     direction[0] = -1;
+//     direction[1] = 0;
+//   } else if ((angle > 292.5) & (angle <= 337.5)) {
+//     direction[0] = -1;
+//     direction[1] = 1;
+//   } else {
+//     direction[0] = 0;
+//     direction[1] = 1;
+//   }
+//   
+//   return direction ;
+// }
+
+
 // [[Rcpp::export]]
-IntegerVector findNextCellCPP(double angle) {
-  // which is the next cell one has to move to (based on the angle)?
-  
-  IntegerVector direction(2, 3);
-  // ensure to only consider angles between 0 and 360 degrees
-  while (angle < 360) {
-    angle += 360.0;
-  };
-  angle = std::fmod(angle, 360.0);
-  
-  if ((angle > 22.5) & (angle <= 67.5)) {
-    direction[0] = 1; // step in x-direction
-    direction[1] = 1; // step in y-direction
-  } else if ((angle > 67.5) & (angle <= 112.5)) {
-    direction[0] = 1;
-    direction[1] = 0;
-  } else if ((angle > 112.5) & (angle <= 157.5)) {
-    direction[0] = 1;
-    direction[1] = -1;
-  } else if ((angle > 157.5) & (angle <= 202.5)) {
-    direction[0] = 0;
-    direction[1] = -1;
-  } else if ((angle > 202.5) & (angle <= 247.5)) {
-    direction[0] = -1;
-    direction[1] = -1;
-  } else if ((angle > 247.5) & (angle <= 292.5)) {
-    direction[0] = -1;
-    direction[1] = 0;
-  } else if ((angle > 292.5) & (angle <= 337.5)) {
-    direction[0] = -1;
-    direction[1] = 1;
-  } else {
-    direction[0] = 0;
-    direction[1] = 1;
+IntegerVector findNextCellCPP(NumericVector gradient) {
+// IntegerVector findNextCellHighDimensionCPP(NumericVector gradient) {
+  // which is the next cell one has to move to (based on the high-dimensional gradient)?
+
+  int d = gradient.size();
+  IntegerVector direction(d, 0.0);
+
+  // we need the largest absolute value to stretch the gradient to the boundary
+  double maxval = max(abs(gradient));
+
+  // stretch gradient vector such that its longest component touches the boundary
+  // of [-3, 3]^d; for each component with a (stretched) value >= 1 go in positive
+  // direction, for all components with a value <= -1 go in the negative direction
+  for (int j = 0; j < d; j++) {
+    double vec = 1.5 * gradient[j] / maxval;
+    if (vec >= 1.0) {
+      direction[j] = 1; // step in positive direction of x[j]
+    } else if (vec <= -1.0) {
+      direction[j] = -1; // step in negative direction of x[j]
+    }
   }
-  
-  return direction ;
+  return direction;
 }
 
 
+// // convert rowIndex (1, ..., nRow) and columnIndex (1, ..., nColumns) to cell ID (1, ..., nRows * nColumns)
+// // [[Rcpp::export]]
+// int convertIndices2CellIDCPP(int rowIndex, int columnIndex, int nRows = 100, int nColumns = 100) {
+//   
+//   int cellID = -1;
+//   if ((columnIndex > nColumns) | (columnIndex < 1) | (rowIndex > nRows) | (rowIndex < 1)) {
+//     // if either the row- or columnIndex are located outside the boundaries, return -1 as ID
+//     cellID = -1;
+//   } else {
+//     cellID = (rowIndex - 1) * nColumns + columnIndex;
+//   }
+//   return cellID;
+// }
 
-// convert rowIndex (1, ..., nRow) and columnIndex (1, ..., nColumns) to cell ID (1, ..., nRows * nColumns)
+
+// convert index per dimension [(1, ..., rows), (1, ..., columns), ...] to cell ID (1, ..., prod(dims))
 // [[Rcpp::export]]
-int convertIndices2CellIDCPP(int rowIndex, int columnIndex, int nRows = 100, int nColumns = 100) {
-  
+int convertIndices2CellIDCPP(IntegerVector indices, IntegerVector dims) {
+// int convertHighDimensionalIndices2CellIDCPP(IntegerVector indices, IntegerVector dims) {
+
   int cellID = -1;
-  if ((columnIndex > nColumns) | (columnIndex < 1) | (rowIndex > nRows) | (rowIndex < 1)) {
+  if (is_true(any(indices > dims)) | is_true(any(indices < 1))) {
     // if either the row- or columnIndex are located outside the boundaries, return -1 as ID
     cellID = -1;
   } else {
-    cellID = (rowIndex - 1) * nColumns + columnIndex;
+    int d = dims.size();
+    IntegerVector cumcells(d, 1);
+    cumcells[0] = 1;
+    for (int j = 1; j < d; j++) {
+      cumcells[j] = cumcells[j - 1] * dims[j - 1];
+    }
+    cellID = 1;
+    for (int j = 0; j < d; j++) {
+      cellID += (indices[j] - 1) * cumcells[j];
+    }
   }
   return cellID;
 }
 
 
-// convert cellID (1, ..., nRows * nColumns) to rowIndex (1, ..., nRow) and columnIndex (1, ..., nColumns)
-// [[Rcpp::export]]
-IntegerVector convertCellID2IndicesCPP(int cellID, int nRows = 100, int nColumns = 100) {
+// // convert cellID (1, ..., nRows * nColumns) to rowIndex (1, ..., nRow) and columnIndex (1, ..., nColumns)
+// // [[Rcpp::export]]
+// IntegerVector convertCellID2IndicesCPP(int cellID, int nRows = 100, int nColumns = 100) {
+// 
+//   IntegerVector indexVector(2, -1);
+//   if ((cellID > (nRows * nColumns)) | (cellID < 1)) {
+//     // if the cell ID has an irregular value, return -1 for the row and column indices
+//     indexVector = rep(-1, 2);
+//   } else {
+//     int x = cellID - 1;
+//     int y = floor(x / nColumns);
+//     indexVector[0] = y + 1;              // rowIndex
+//     indexVector[1] = (x % nColumns) + 1; // columnIndex
+//   }
+//   return indexVector;
+// }
 
-  IntegerVector indexVector(2, -1);
-  if ((cellID > (nRows * nColumns)) | (cellID < 1)) {
-    // if the cell ID has an irregular value, return -1 for the row and column indices
-    indexVector = rep(-1, 2);
-  } else {
-    int x = cellID - 1;
-    int y = floor(x / nColumns);
-    indexVector[0] = y + 1;              // rowIndex
-    indexVector[1] = (x % nColumns) + 1; // columnIndex
+
+// convert cellID (1, ..., prod(dims)) to index per dimension [(1, ..., rows), (1, ..., columns), ...]
+// [[Rcpp::export]]
+IntegerVector convertCellID2IndicesCPP(int cellID, IntegerVector dims) {
+// IntegerVector convertHighDimensionalCellID2IndicesCPP(int cellID, IntegerVector dims) {
+
+  int d = dims.size();
+  IntegerVector indexVector(d, -1);
+
+  IntegerVector cumcells(d, 1);
+  cumcells[0] = dims[0];
+  for (int j = 1; j < d; j++) {
+    cumcells[j] = cumcells[j - 1] * dims[j];
+  }
+
+  if ((cellID <= cumcells[d - 1]) & (cellID >= 1)) {
+    indexVector[0] = ((cellID - 1) % cumcells[0]) + 1;
+    for (int j = 1; j < d; j++) {
+      int tmp = floor((cellID - 1) / cumcells[j - 1]);
+      indexVector[j] = (tmp % dims[j]) + 1;
+    }
   }
   return indexVector;
 }
 
 
-// compute the cumulated gradient matrix based on a grid of points and their corresponding gradients;
-// precVectorLength defines the threshold of the multi-objective gradient length, for which the
-// corresponding point is considered to be locally efficient (suggest: 0.001 or smaller);
-// precNorm is the threshold used when normalizing a vector (within the angle-computation)
+// // compute the cumulated gradient matrix based on a grid of points and their corresponding gradients;
+// // precVectorLength defines the threshold of the multi-objective gradient length, for which the
+// // corresponding point is considered to be locally efficient (suggest: 0.001 or smaller);
+// // precNorm is the threshold used when normalizing a vector (within the angle-computation)
+// // [[Rcpp::export]]
+// NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm) {
+// 
+//   // FIXME: so far, the code only supports 2D-problems
+//   int d = centers.ncol();                   // dimensionality of search space
+//   int n = centers.nrow();                   // number of grid points
+// 
+//   // number of grid points per (search space) dimension
+//   NumericVector ctr1 = centers(_,0);
+//   ctr1 = unique(ctr1);
+//   int nColumns = ctr1.size();               // #columns = number of grid points in x1-dimension
+//   NumericVector ctr2 = centers(_,1);
+//   ctr2 = unique(ctr2);
+//   int nRows = ctr2.size();                  // #rows = number of grid points in x2-dimension
+// 
+//   NumericVector gradientLengths(n);         // length vector for the multi-objective gradients
+//   IntegerVector cellPointer(n, -999);       // vector, which indicates per cell the successor cell
+//   NumericVector gradFieldVector(n, -999.0); // the "final" result vector
+//   LogicalVector visited = rep(false, n);    // which cells have already been "visited" / "processed"
+// 
+//   // helper variables
+//   double angle;
+//   double vectorLength = -1.0;
+//   NumericVector baseVector = NumericVector::create( 1.0, 0.0 );
+//   NumericVector currentGradients;
+//   int visitCounter = 0;                     // counter, enabling early stop of algorithm once all cells are processed
+//   IntegerVector currentCell(d);             // row and column index of the current cell
+//   IntegerVector nextCell(d);                // row and column index of the next (= successor) cell
+//   int nextCellID;
+// 
+//   for (int i = 0; i < n; i++) {
+//     // iterate over all cells, extract their gradients and store the gradient lengths
+//     currentGradients = gradients(i,_);
+//     vectorLength = computeVectorLengthCPP(currentGradients);
+//     gradientLengths[i] = vectorLength;
+//     if (vectorLength < precVectorLength) {
+//       // if the multi-objective gradient is "short enough", the current cell is considered
+//       // to be locally efficient (--> move on to the next cell)
+//       visited[i] = true;
+//       visitCounter++;
+//       gradFieldVector[i] = vectorLength;
+//     } else {
+//       // compute the angle of the gradient and identify the succeeding cell
+//       angle = computeAngleCPP(baseVector, currentGradients, precNorm);
+//       if (currentGradients[1] < 0) {
+//         angle = 360 - angle;
+//       }
+//       nextCell = findNextCellCPP(angle);
+//       currentCell = convertCellID2IndicesCPP(i + 1, nRows, nColumns);
+//       nextCell += currentCell;
+//       if ((nextCell[0] > nRows) | (nextCell[0] < 1) | (nextCell[1] > nColumns) | (nextCell[1] < 1)) {
+//         // if the next cell is located outside the boundaries, one can not move further
+//         // into the direction of its gradient
+//         visited[i] = true;
+//         visitCounter++;
+//         gradFieldVector[i] = vectorLength;
+//       } else {
+//         // otherwise, store the successor cell
+//         nextCellID = convertIndices2CellIDCPP(nextCell[0], nextCell[1], nRows, nColumns);
+//         cellPointer[i] = nextCellID - 1;
+//       }
+//     }
+//   }
+// 
+//   /* below, the actual cumulative part begins */
+// 
+//   // helper variables
+//   int currentCellID;
+//   int pathLength;
+//   IntegerVector path(n, -999);
+//   for (int i = 0; i < n; i++) {
+//     // iterate over all cells
+//     if (visitCounter == n) {
+//       // leave the for-loop if all cells have already been visited
+//       break;
+//     }
+//     if (!visited[i]) {
+//       // if the i-th cell has not yet been visited, follow the path
+//       // from that cell towards a previously "visited" cell (either
+//       // from an earlier path, a boundary point pointing out of bounds,
+//       // or a local efficient point)
+// 
+//       // initialize the path with cell i
+//       currentCellID = i;
+//       path[0] = currentCellID;
+//       pathLength = 1;
+//       visited[currentCellID] = true;
+//       nextCellID = cellPointer[currentCellID];
+//       while (!visited[nextCellID]) {
+//         // as long as the succeeding cell has not been visited, append
+//         // such a cell to the current path
+//         currentCellID = nextCellID;
+//         path[pathLength] = currentCellID;
+//         visited[currentCellID] = true;
+//         visitCounter++;
+//         nextCellID = cellPointer[currentCellID];
+//         pathLength++;
+//       }
+// 
+//       double a = 0.0;
+//       if (gradFieldVector[nextCellID] > -999) {
+//         // if the path stopped, because its next cell was already
+//         // part of an earlier loop, add the value of the next
+//         // cell to the cumulated sum (a) -- and ensure that
+//         // this cell is not counted twice
+//         a = gradFieldVector[nextCellID];
+//         visitCounter--;
+//       }
+//       if (pathLength > 0) {
+//         // iterate backwards over the path and add the cumulated
+//         // sum of gradient lengths to the cells of the path
+//         for (int j = pathLength; j > 0; j--) {
+//           int index = path[j - 1];
+//           a += gradientLengths[index];
+//           gradFieldVector[index] = a;
+//         }
+//       }
+//     }
+//   }
+// 
+//   return gradFieldVector;
+// }
+
+
+
 // [[Rcpp::export]]
 NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm) {
+// NumericVector cumulateHighDimensionalGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm) {
 
   // FIXME: so far, the code only supports 2D-problems
   int d = centers.ncol();                   // dimensionality of search space
   int n = centers.nrow();                   // number of grid points
-
+  
   // number of grid points per (search space) dimension
-  NumericVector ctr1 = centers(_,0);
-  ctr1 = unique(ctr1);
-  int nColumns = ctr1.size();               // #columns = number of grid points in x1-dimension
-  NumericVector ctr2 = centers(_,1);
-  ctr2 = unique(ctr2);
-  int nRows = ctr2.size();                  // #rows = number of grid points in x2-dimension
+  IntegerVector dims(d, 0);
+  for (int j = 0; j < d; j++) {
+    NumericVector ctr = centers(_,j);
+    ctr = unique(ctr);
+    dims[j] = ctr.size();
+  }
 
   NumericVector gradientLengths(n);         // length vector for the multi-objective gradients
   IntegerVector cellPointer(n, -999);       // vector, which indicates per cell the successor cell
   NumericVector gradFieldVector(n, -999.0); // the "final" result vector
   LogicalVector visited = rep(false, n);    // which cells have already been "visited" / "processed"
-
+  
   // helper variables
-  double angle;
   double vectorLength = -1.0;
-  NumericVector baseVector = NumericVector::create( 1.0, 0.0 );
   NumericVector currentGradients;
   int visitCounter = 0;                     // counter, enabling early stop of algorithm once all cells are processed
   IntegerVector currentCell(d);             // row and column index of the current cell
@@ -224,15 +423,13 @@ NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradient
       visitCounter++;
       gradFieldVector[i] = vectorLength;
     } else {
-      // compute the angle of the gradient and identify the succeeding cell
-      angle = computeAngleCPP(baseVector, currentGradients, precNorm);
-      if (currentGradients[1] < 0) {
-        angle = 360 - angle;
-      }
-      nextCell = findNextCellCPP(angle);
-      currentCell = convertCellID2IndicesCPP(i + 1, nRows, nColumns);
+      // nextCell = findNextCellHighDimensionCPP(currentGradients);
+      // currentCell = convertHighDimensionalCellID2IndicesCPP(i + 1, dims);
+      nextCell = findNextCellCPP(currentGradients);
+      currentCell = convertCellID2IndicesCPP(i + 1, dims);
       nextCell += currentCell;
-      if ((nextCell[0] > nRows) | (nextCell[0] < 1) | (nextCell[1] > nColumns) | (nextCell[1] < 1)) {
+
+      if (is_true(any(nextCell > dims)) | is_true(any(nextCell < 1))) {
         // if the next cell is located outside the boundaries, one can not move further
         // into the direction of its gradient
         visited[i] = true;
@@ -240,7 +437,8 @@ NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradient
         gradFieldVector[i] = vectorLength;
       } else {
         // otherwise, store the successor cell
-        nextCellID = convertIndices2CellIDCPP(nextCell[0], nextCell[1], nRows, nColumns);
+        // nextCellID = convertHighDimensionalIndices2CellIDCPP(nextCell, dims);
+        nextCellID = convertIndices2CellIDCPP(nextCell, dims);
         cellPointer[i] = nextCellID - 1;
       }
     }
@@ -304,4 +502,3 @@ NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradient
 
   return gradFieldVector;
 }
-
