@@ -6,6 +6,10 @@
 #'
 #' @param df [\code{\link{data.frame}}]\cr
 #'   Data frame as returned by \code{\link{computeCumulatedPathLengths}}.
+#' @param var1 [\code{\link{character}(1L)}]\cr
+#'   Name of the variable indicating the first dimension (default: \code{"x1"}).
+#' @param var2 [\code{\link{character}(1L)}]\cr
+#'   Name of the variable indicating the second dimension (default: \code{"x2"}).
 #' @param log.scale [\code{\link{logical}(1L)}]\cr
 #'   Should the resulting heights be displayed on a log-scale? The default is \code{TRUE}.
 #' @param impute.zero [\code{\link{logical}(1L)}]\cr
@@ -46,11 +50,11 @@
 #' # one should set minimalistic.image = TRUE:
 #' ggplotHeatmap(x, minimalistic.image = TRUE)
 #' @export
-ggplotHeatmap = function(df, log.scale = TRUE, impute.zero = TRUE,
+ggplotHeatmap = function(df, var1 = "x1", var2 = "x2", log.scale = TRUE, impute.zero = TRUE,
   minimalistic.image = FALSE, color.palette, legend.position, ...) {
 
   assertDataFrame(df, any.missing = FALSE, min.cols = 3L)
-  assertSubset(c("x1", "x2", "height"), colnames(df))
+  assertSubset(c(var1, var2, "height"), colnames(df))
   assertLogical(log.scale, any.missing = FALSE, len = 1L, null.ok = FALSE)
   assertLogical(impute.zero, any.missing = FALSE, len = 1L, null.ok = FALSE)
   assertLogical(minimalistic.image, any.missing = FALSE, len = 1L, null.ok = FALSE)
@@ -72,14 +76,14 @@ ggplotHeatmap = function(df, log.scale = TRUE, impute.zero = TRUE,
       color.palette = fields::tim.colors(500L)
     } else if ("viridisLite" %in% inst.pkgs) {
       color.palette = viridisLite::viridis(500L,
-        alpha = 1, begin = 0, end = 1, direction = 1, option = "D")
+                                           alpha = 1, begin = 0, end = 1, direction = 1, option = "D")
     } else {
       color.palette = terrain.colors(500L)
     }
   }
   ## create the heatmap (colored tiles)
   g = ggplot() + 
-    geom_tile(data = df, mapping = aes_string(x = "x1", y = "x2", fill = "height"), ...)
+    geom_tile(data = df, mapping = aes_string(x = var1, y = var2, fill = "height"), ...)
 
   if (log.scale) {
     ## if results are shown on log-scale, provide a 'pretty' height scale
@@ -94,8 +98,20 @@ ggplotHeatmap = function(df, log.scale = TRUE, impute.zero = TRUE,
   }
 
   ## Modify axes labels (place indices as subscripts)
-  g = g + xlab(expression(x[1]))
-  g = g + ylab(expression(x[2]))
+  if (var1 == "x1") {
+    g = g + xlab(expression(x[1]))
+  } else if (var1 == "x2") {
+    g = g + xlab(expression(x[2]))
+  } else if (var1 == "x3") {
+    g = g + xlab(expression(x[3]))
+  }
+  if (var2 == "x1") {
+    g = g + ylab(expression(x[1]))
+  } else if (var2 == "x2") {
+    g = g + ylab(expression(x[2]))
+  } else if (var2 == "x3") {
+    g = g + ylab(expression(x[3]))
+  }
 
   if (minimalistic.image) {
     ## in case of minimalistic images, remove the grey panels from the background,
@@ -116,6 +132,5 @@ ggplotHeatmap = function(df, log.scale = TRUE, impute.zero = TRUE,
     }
     g = g + theme(legend.position = legend.position)
   }
-
   return(g)
 }
