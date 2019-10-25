@@ -47,6 +47,7 @@
 #' # Define two single-objective test problems:
 #' fn1 = function(x) sum((x - c(2, 0))^2)
 #' fn2 = function(x) sum((x - c(0, 1))^2)
+#' fn = function(x) return(c(fn1(x), fn2(x)))
 #' 
 #' # Visualize locally efficient set, i.e., the "area" where we ideally want to find a point:
 #' plot(c(2, 0), c(0, 1), type = "o", pch = 19,
@@ -60,22 +61,21 @@
 #' text(rbind(x.start), labels = c("start"), pos = 2)
 #'
 #' # Visualize path of bisection search in blue
-#' res.bisection = findLocallyEfficientPoint(c(0.3, 0.5), fn1, fn2, ls.method = "bisection")
+#' res.bisection = findLocallyEfficientPoint(c(0.3, 0.5), fn, ls.method = "bisection")
 #' points(res.bisection$opt.path, pch = 20, lty = 2, type = "o", col = "blue")
 #'
 #' # Visualize path of multi-objective local search in red
-#' res.mo.ls = findLocallyEfficientPoint(c(0.3, 0.5), fn1, fn2, ls.method = "mo-ls")
+#' res.mo.ls = findLocallyEfficientPoint(c(0.3, 0.5), fn, ls.method = "mo-ls")
 #' points(res.mo.ls$opt.path, pch = 20, lty = 2, type = "o", col = "red")
 #' @export
-findLocallyEfficientPoint = function(ind, fn1, fn2, gradient.list = list(g1 = NULL, g2 = NULL),
+findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NULL),
   max.no.steps.ls = 500L, scale.step = 0.5, prec.grad = 1e-6, prec.norm = 1e-6, prec.angle = 1e-4,
   ls.method = "both", lower, upper, check.data = TRUE, show.info = TRUE, allow.restarts = TRUE) {
 
   d = length(ind)
   # perform sanity checks
   if (check.data) {
-    assertFunction(fn1)
-    assertFunction(fn2)
+    assertFunction(fn)
     assertNumber(scale.step, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.grad, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.norm, lower = 0, finite = TRUE, null.ok = FALSE)
@@ -117,7 +117,7 @@ findLocallyEfficientPoint = function(ind, fn1, fn2, gradient.list = list(g1 = NU
 
     ## generate offspring
     individual = opt.path[nrow(opt.path),]
-    gradient.step = performGradientStep(ind = individual, fn1 = fn1, fn2 = fn2, gradient.list = gradient.list,
+    gradient.step = performGradientStep(ind = individual, fn = fn, gradient.list = gradient.list,
       scale.step = scale.step, prec.grad = prec.grad, prec.norm = prec.norm, prec.angle = prec.angle,
       lower = lower, upper = upper, check.data = check.data)
     offspring = gradient.step$offspring
@@ -195,7 +195,7 @@ findLocallyEfficientPoint = function(ind, fn1, fn2, gradient.list = list(g1 = NU
       ## FIXME: double-check whether max.steps is set correctly
 
       bisect.opt.result = performWeightedBisectionOptimization(
-        x1 = x1, x2 = x2, fn1 = fn1, fn2 = fn2,
+        x1 = x1, x2 = x2, fn = fn,
         g1 = v1, g2 = v2, prec.grad = prec.grad,
         prec.norm = prec.norm, max.steps = max.no.steps.ls - i + 1L)
       gradient.list = bisect.opt.result$gradient.list
@@ -224,7 +224,7 @@ findLocallyEfficientPoint = function(ind, fn1, fn2, gradient.list = list(g1 = NU
     if (ls.method %in% c("both", "mo-ls")) {
       ## FIXME: double-check whether max.steps is set correctly
       mo.ls.opt.result = performMultiObjectiveLocalSearch(
-        x1 = x1, x2 = x2, x3 = x3, fn1 = fn1, fn2 = fn2,
+        x1 = x1, x2 = x2, x3 = x3, fn = fn,
         prec.grad = prec.grad, prec.norm = prec.norm, prec.angle = prec.angle,
         scale.step = scale.step, lower = lower, upper = upper,
         max.steps = max.no.steps.ls - i + 1L)

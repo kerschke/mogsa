@@ -1,7 +1,7 @@
 #' Perform multi-objective gradient descent step.
 #'
 #' @description
-#'   Computes the bi-objective gradient for the two objectives \code{fn1} and \code{fn2}
+#'   Computes the bi-objective gradient for the bi-objective function \code{fn}
 #'   in position \code{ind}. The bi-objective gradient is the combined vector of the
 #'   two single gradients. Note that the step size depends on the length of the combined
 #'   gradient vector and thus automatically decreases when approaching an efficient set.
@@ -28,14 +28,15 @@
 #' # Define two single-objective test problems:
 #' fn1 = function(x) sum((x - c(0.2, 1))^2)
 #' fn2 = function(x) sum(x)
+#' fn = function(x) return(c(fn1(x), fn2(x)))
 #'
 #' # Perform a gradient step:
-#' performGradientStep(c(0.3, 0.5), fn1, fn2)
+#' performGradientStep(c(0.3, 0.5), fn)
 #'
 #' # Here, we have found the optimum of fn1:
-#' performGradientStep(c(0.2, 1), fn1, fn2)
+#' performGradientStep(c(0.2, 1), fn)
 #' @export
-performGradientStep = function(ind, fn1, fn2,
+performGradientStep = function(ind, fn,
   gradient.list = list(g1 = NULL, g2 = NULL), scale.step = 0.5,
   prec.grad = 1e-6, prec.norm = 1e-6, prec.angle = 1e-4,
   lower, upper, check.data = TRUE) {
@@ -43,8 +44,7 @@ performGradientStep = function(ind, fn1, fn2,
   assertNumeric(ind, any.missing = FALSE, null.ok = FALSE)
   d = length(ind)
   if (check.data) {
-    assertFunction(fn1)
-    assertFunction(fn2)
+    assertFunction(fn)
     assertNumber(scale.step, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.grad, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.norm, lower = 0, finite = TRUE, null.ok = FALSE)
@@ -78,14 +78,14 @@ performGradientStep = function(ind, fn1, fn2,
   p = length(gradient.list)
   fn.evals = matrix(0L, nrow = 1L, ncol = p)
   names(fn.evals) = sprintf("fn%i.evals", seq_len(p))
-
-  for (k in seq_along(gradient.list)) {
-    ## iterate over all gradients from the gradient list
-    if (is.null(gradient.list[[k]])) {
-      ## if a gradient is not existent, estimate it
-      gi = -estimateGradientBothDirections(fn = list(fn1, fn2)[[k]],
-        ind = ind, prec.grad = prec.grad, check.data = FALSE, lower = lower, upper = upper)
-      gi = normalizeVectorCPP(gi, prec = prec.norm)
+  
+  if(any(sapply(gradient.list, is.null))) {
+    ## if gradient is not existent, estimate it
+    g = -estimateGradientBothDirections(fn = fn,
+                                         ind = ind, prec.grad = prec.grad, check.data = FALSE, lower = lower, upper = upper)
+    
+    for(k in 1:nrow(g)) {
+      gi = normalizeVectorCPP(g[k,], prec = prec.norm)
       gradient.list[[k]] = gi
       fn.evals[1L, k] = p * d
       if (all(gi == 0)) {

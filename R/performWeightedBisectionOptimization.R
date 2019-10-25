@@ -29,6 +29,7 @@
 #' # Define two single-objective test problems:
 #' fn1 = function(x) sum((x - c(2, 0))^2)
 #' fn2 = function(x) sum((x - c(0, 1))^2)
+#' fn = function(x) return(c(fn1(x), fn2(x)))
 #' 
 #' # Visualize locally efficient set, i.e., the "area" where we ideally want to find a point:
 #' plot(c(2, 0), c(0, 1), type = "o", pch = 19,
@@ -43,7 +44,7 @@
 #' text(rbind(x1, x2), labels = c("x1", "x2"), pos = 4)
 #' 
 #' # Optimize using weighted bisection optimization:
-#' opt.path = performWeightedBisectionOptimization(x1 = x1, x2 = x2, fn1 = fn1, fn2 = fn2)$opt.path
+#' opt.path = performWeightedBisectionOptimization(x1 = x1, x2 = x2, fn = fn)$opt.path
 #' 
 #' # Visualize the optimization path:
 #' points(opt.path)
@@ -53,7 +54,7 @@
 #' points(opt.path[n, 1], opt.path[n, 2], pch = 4, col = "red", cex = 2)
 #' text(opt.path[n, 1], opt.path[n, 2], "Found Local Efficient Point", pos = 4, offset = 1.5)
 #' @export
-performWeightedBisectionOptimization = function(x1, x2, fn1, fn2, g1 = NULL, g2 = NULL,
+performWeightedBisectionOptimization = function(x1, x2, fn, g1 = NULL, g2 = NULL,
   prec.grad = 1e-6, prec.norm = 1e-6, max.steps = 1000L, lower, upper) {
 
   if (missing(lower)) {
@@ -72,30 +73,35 @@ performWeightedBisectionOptimization = function(x1, x2, fn1, fn2, g1 = NULL, g2 
   d = length(x1)
   ## approximate MO gradients (if not provided) per objective
   if (is.null(g1)) {
+    # TODO fix fn1/fn2 split here
+    g = estimateGradientBothDirections(
+      fn = fn, ind = x1, prec.grad = prec.grad, lower = lower, upper = upper)
+    
     v1 = normalizeVectorCPP(
-      vec = estimateGradientBothDirections(
-        fn = fn1, ind = x1, prec.grad = prec.grad, lower = lower, upper = upper),
+      vec = g[1,],
       prec = prec.norm
     )
     v2 = normalizeVectorCPP(
-      vec = estimateGradientBothDirections(
-        fn = fn2, ind = x1, prec.grad = prec.grad, lower = lower, upper = upper),
+      vec = g[2,],
       prec = prec.norm
     )
+    
     fn.evals[1L, seq_len(p)] = p * d
     g1 = -(v1 + v2)
   }
   if (is.null(g2)) {
+    g = estimateGradientBothDirections(
+      fn = fn, ind = x2, prec.grad = prec.grad, lower = lower, upper = upper)
+    
     v1 = normalizeVectorCPP(
-      vec = estimateGradientBothDirections(
-        fn = fn1, ind = x2, prec.grad = prec.grad, lower = lower, upper = upper),
+      vec = g[1,],
       prec = prec.norm
     )
     v2 = normalizeVectorCPP(
-      vec = estimateGradientBothDirections(
-        fn = fn2, ind = x2, prec.grad = prec.grad, lower = lower, upper = upper),
+      vec = g[2,],
       prec = prec.norm
     )
+    
     fn.evals[2L, seq_len(p)] = p * d
     g2 = -(v1 + v2)
   }
@@ -121,28 +127,24 @@ performWeightedBisectionOptimization = function(x1, x2, fn1, fn2, g1 = NULL, g2 
 
     ## estimate single-objective gradients in x.new
     i = nrow(fn.evals)
+    
+    g = estimateGradientBothDirections(
+      fn = fn, ind = x.new, prec.grad = prec.grad, lower = lower, upper = upper)
+    
     v1 = normalizeVectorCPP(
-      vec = estimateGradientBothDirections(
-        fn = fn1, ind = x.new, prec.grad = prec.grad, lower = lower, upper = upper),
+      vec = g[1,],
       prec = prec.norm
     )
-    fn.evals[i, 1L] = fn.evals[i, 1L] + p * d
-
-    if (computeVectorLengthCPP(v1) == 0) {
-      ## stop if v1 indicates a local optimum for fn1
-      found.optimum = TRUE
-      break
-    }
-
     v2 = normalizeVectorCPP(
-      vec = estimateGradientBothDirections(
-        fn = fn2, ind = x.new, prec.grad = prec.grad, lower = lower, upper = upper),
+      vec = g[2,],
       prec = prec.norm
     )
+    
+    fn.evals[i, 1L] = fn.evals[i, 1L] + p * d
     fn.evals[i, 2L] = fn.evals[i, 2L] + p * d
 
-    if (computeVectorLengthCPP(v2) == 0) {
-      ## stop if v2 indicates a local optimum for fn2
+    if (computeVectorLengthCPP(v1) == 0 || computeVectorLengthCPP(v2) == 0) {
+      ## local optimum for one of the objectives
       found.optimum = TRUE
       break
     }

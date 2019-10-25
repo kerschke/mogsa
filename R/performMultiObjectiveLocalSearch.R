@@ -33,6 +33,7 @@
 #' # Define two single-objective test problems:
 #' fn1 = function(x) sum((x - c(2, 0))^2)
 #' fn2 = function(x) sum((x - c(0, 1))^2)
+#' fn = function(x) return(fn1(x), fn2(x))
 #' 
 #' # Visualize locally efficient set, i.e., the "area" where we ideally want to find a point:
 #' plot(c(2, 0), c(0, 1), type = "o", pch = 19,
@@ -49,7 +50,7 @@
 #' 
 #' # Optimize using weighted bisection optimization:
 #' result = performMultiObjectiveLocalSearch(x1 = x1, x2 = x2, x3 = x3,
-#'   fn1 = fn1, fn2 = fn2, lower = c(0, 0), upper = c(2, 1))
+#'   fn = fn, lower = c(0, 0), upper = c(2, 1))
 #' opt.path = result$opt.path
 #' 
 #' # Visualize the optimization path:
@@ -60,7 +61,7 @@
 #' points(opt.path[n, 1], opt.path[n, 2], pch = 4, col = "red", cex = 2)
 #' text(opt.path[n, 1], opt.path[n, 2], "Found Local Efficient Point", pos = 4, offset = 1.5)
 #' @export
-performMultiObjectiveLocalSearch = function(x1, x2, x3, fn1, fn2,
+performMultiObjectiveLocalSearch = function(x1, x2, x3, fn,
   prec.grad = 1e-6, prec.norm = 1e-6, prec.angle = 1e-4,
   scale.step = 0.5, lower, upper, max.steps = 1000L) {
 
@@ -74,7 +75,7 @@ performMultiObjectiveLocalSearch = function(x1, x2, x3, fn1, fn2,
   while (nrow(opt.path) <= max.steps) {
     if (nrow(opt.path) > 1L) {
       i = nrow(opt.path)
-      gradient.step = performGradientStep(ind = x2, fn1 = fn1, fn2 = fn2,
+      gradient.step = performGradientStep(ind = x2, fn = fn,
         gradient.list = gradient.list,
         scale.step = scale.step, prec.grad = prec.grad,
         prec.norm = prec.norm, prec.angle = prec.angle, lower = lower, upper = upper)

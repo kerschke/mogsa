@@ -44,15 +44,14 @@
 #' # c(0.2, 1) is obviously a local optimum of fn1, so let's explore the efficient set from there:
 #' exploreEfficientSet(c(0.2, 1), fn1, fn2, max.no.steps.exploration = 50L, exploration.step = 0.05)
 #' @export
-exploreEfficientSet = function(ind, fn1, fn2, gradient.list = list(g1 = NULL, g2 = NULL),
+exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NULL),
   max.no.steps.exploration = 400L, exploration.step = 0.2, prec.grad = 1e-6,
   prec.norm = 1e-6, prec.angle = 1e-4, lower, upper, check.data = TRUE, show.info = TRUE) {
 
   assertNumeric(ind, any.missing = FALSE, null.ok = FALSE)
   d = length(ind)
   if (check.data) {
-    assertFunction(fn1)
-    assertFunction(fn2)
+    assertFunction(fn)
     assertNumber(exploration.step, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.grad, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.norm, lower = 0, finite = TRUE, null.ok = FALSE)
@@ -76,8 +75,8 @@ exploreEfficientSet = function(ind, fn1, fn2, gradient.list = list(g1 = NULL, g2
     }
     assertLogical(show.info, any.missing = FALSE, len = 1L, null.ok = FALSE)
     # ensure that ind is locally efficient
-    if (show.info && !is.null(performGradientStep(ind = ind, fn1 = fn1,
-      fn2 = fn2, lower = lower, upper = upper, prec.grad = prec.grad,
+    if (show.info && !is.null(performGradientStep(ind = ind, fn = fn,
+      lower = lower, upper = upper, prec.grad = prec.grad,
       prec.norm = prec.norm, prec.angle = prec.angle,
       check.data = FALSE)$offspring)) {
       catf("ATTENTION: The exploration of the efficient set was started from a locally non-efficient point.")
@@ -94,22 +93,22 @@ exploreEfficientSet = function(ind, fn1, fn2, gradient.list = list(g1 = NULL, g2
   g1 = gradient.list$g1
   g2 = gradient.list$g2
 
-  # compute gradient of the first objective
-  if (is.null(g1)) {
-    g1 = -estimateGradientBothDirections(fn = fn1, ind = ind,
+  # TODO fn1, fn2 -> fn
+  
+  # compute gradients if missing
+  if (is.null(g1) || is.null(g2)) {
+    g = -estimateGradientBothDirections(fn = fn, ind = ind,
       prec.grad = prec.grad, check.data = FALSE,
       lower = lower, upper = upper)
+    g1 = g[1,]
+    g2 = g[2,]
+    
     fn.evals[1L, 1L] = p * d
-  }
-  grad1 = g1 = normalizeVectorCPP(vec = g1, prec = prec.norm)
-
-  # compute gradient of the second objective
-  if (is.null(g2)) {
-    g2 = -estimateGradientBothDirections(fn = fn2, ind = ind,
-      prec.grad = prec.grad, check.data = FALSE,
-      lower = lower, upper = upper)
     fn.evals[1L, 2L] = p * d
   }
+  
+  grad1 = g1 = normalizeVectorCPP(vec = g1, prec = prec.norm)
+
   grad2 = g2 = normalizeVectorCPP(vec = g2, prec = prec.norm)
 
   ## initialize external points per objective, their gradient lists,
@@ -137,10 +136,16 @@ exploreEfficientSet = function(ind, fn1, fn2, gradient.list = list(g1 = NULL, g2
     ## is (a) a point along the efficient set, (b) a point outside the
     ## efficient set (pointing back towards it), or (c) a point in an adjacent
     ## basin
-    g1.off = -estimateGradientBothDirections(fn = fn1, ind = offspring,
+    g.off = -estimateGradientBothDirections(fn = fn, ind = offspring,
       prec.grad = prec.grad, check.data = FALSE,
       lower = lower, upper = upper)
+    
+    g1.off = g.off[1,]
     g1.off = normalizeVectorCPP(vec = g1.off, prec = prec.norm)
+    
+    g2.off = g.off[2,]
+    g2.off = normalizeVectorCPP(vec = g2.off, prec = prec.norm)
+    
     if (computeVectorLengthCPP(g1.off) == 0) {
       ## if the offspring's gradient in the direction of fn1 is 0, we must have
       ## reached a local optimum of fn1 and can't proceed
@@ -151,10 +156,6 @@ exploreEfficientSet = function(ind, fn1, fn2, gradient.list = list(g1 = NULL, g2
       break
     }
 
-    g2.off = -estimateGradientBothDirections(fn = fn2, ind = offspring,
-      prec.grad = prec.grad, check.data = FALSE,
-      lower = lower, upper = upper)
-    g2.off = normalizeVectorCPP(vec = g2.off, prec = prec.norm)
     if (computeVectorLengthCPP(g2.off) == 0) {
       ## if the offspring's gradient in the direction of fn2 is 0, we can't
       ## move further; note that this scenario is unlikely (if even possible?!)
@@ -221,11 +222,17 @@ exploreEfficientSet = function(ind, fn1, fn2, gradient.list = list(g1 = NULL, g2
       ## the direction of fn2
       break
     }
+    
+    g.off = -estimateGradientBothDirections(fn = fn, ind = offspring,
+                                            prec.grad = prec.grad, check.data = FALSE,
+                                            lower = lower, upper = upper)
 
-    g2.off = -estimateGradientBothDirections(fn = fn2, ind = offspring,
-      prec.grad = prec.grad, check.data = FALSE,
-      lower = lower, upper = upper)
+    g1.off = g.off[1,]
+    g1.off = normalizeVectorCPP(vec = g1.off, prec = prec.norm)
+    
+    g2.off = g.off[2,]
     g2.off = normalizeVectorCPP(vec = g2.off, prec = prec.norm)
+    
     if (computeVectorLengthCPP(g2.off) == 0) {
       ## if the offspring's gradient in the direction of fn2 is 0, we must have
       ## reached a local optimum of fn2 and can't proceed
@@ -236,10 +243,6 @@ exploreEfficientSet = function(ind, fn1, fn2, gradient.list = list(g1 = NULL, g2
       break
     }
 
-    g1.off = -estimateGradientBothDirections(fn = fn1, ind = offspring,
-      prec.grad = prec.grad, check.data = FALSE,
-      lower = lower, upper = upper)
-    g1.off = normalizeVectorCPP(vec = g1.off, prec = prec.norm)
     if (computeVectorLengthCPP(g1.off) == 0) {
       ## if the offspring's gradient in the direction of fn1 is 0, we can't
       ## move further; note that this scenario is unlikely (if even possible?!)

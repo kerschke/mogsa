@@ -67,27 +67,37 @@ runMOGSA = function(ind, fn = NULL, fn1 = NULL, fn2 = NULL,
   prec.grad = 1e-6, prec.norm = 1e-6, prec.angle = 1e-4, ls.method = "both",
   lower, upper, check.data = TRUE, show.info = TRUE, allow.restarts = TRUE) {
 
-  # initialize single-objective test functions
+  # create unified objective function and check plausibility
   if (is.null(fn) & (is.null(fn1) || is.null(fn2))) {
     stop("Either provide (i) fn or (ii) fn1 and fn2.")
   }
+  
   if (is.null(fn1) || is.null(fn2)) {
     assertFunction(fn)
-    if (is.null(fn1)) {
-      fn1 = function(...) fn(...)[1L]
-    }
-    if (is.null(fn2)) {
-      fn2 = function(...) fn(...)[2L]
-    }
-  } else if (!is.null(fn)) {
-    warning("As the single-objective functions fn1 and fn2 are provided,
+  } else {
+    if (!is.null(fn)) {
+      warning("As the single-objective functions fn1 and fn2 are provided,
       the bi-objective function fn will be ignored.")
+    }
+    
+    assertFunction(fn1)
+    assertFunction(fn2)
+    fn = function(...) return(c(fn1(...), fn2(...)))
+    fn1 = NULL
+    fn2 = NULL
   }
-
-  # perform sanity checks
+  
+  # extract dimensionality from starting individual
   d = length(ind)
-  assertFunction(fn1)
-  assertFunction(fn2)
+  
+  # retrieve number of features p
+  p = length(fn(ind))
+  
+  if (p != 2L) {
+    stop("Only bi-objective functions are supported at the moment.")
+  }
+  
+  # perform sanity checks
   assertIntegerish(max.no.basins, lower = 1L, any.missing = FALSE, len = 1L)
   assertIntegerish(max.no.steps.ls, lower = 1L, any.missing = FALSE, len = 1L)
   assertIntegerish(max.no.steps.exploration, lower = 1L, any.missing = FALSE, len = 1L)
@@ -98,6 +108,8 @@ runMOGSA = function(ind, fn = NULL, fn1 = NULL, fn2 = NULL,
   assertNumber(prec.norm, lower = mc.min, finite = TRUE, null.ok = FALSE)
   assertNumber(prec.angle, lower = mc.min, upper = 180, null.ok = FALSE)
   assertLogical(check.data, any.missing = FALSE, len = 1L, null.ok = FALSE)
+  
+  # TODO extract lower and upper automatically for smoof functions
   if (missing(lower)) {
     lower = rep(-Inf, d)
   } else if ((length(lower) == 1L) & (d != 1L)) {
@@ -117,12 +129,11 @@ runMOGSA = function(ind, fn = NULL, fn1 = NULL, fn2 = NULL,
 
   ## actual algorithm loop
   ## FIXME: so far, it is hard-coded for p = 2L
-  p = 2L
+  
   sp = seq_len(p)
   opt.path = matrix(ind, nrow = 1L)
   fn.evals = matrix(0L, nrow = 1L, ncol = p)
   gradient.list = vector(mode = "list", length = p)
-  names(gradient.list) = sprintf("g%i", seq_len(p))
   ls.steps = exploration.steps = external.steps = NULL
   for (ctr in seq_len(max.no.basins)) {
     ind = opt.path[nrow(opt.path),]
@@ -130,7 +141,7 @@ runMOGSA = function(ind, fn = NULL, fn1 = NULL, fn2 = NULL,
     if (show.info) {
       catf("-- Performing Local Search in Basin %i", ctr)
     }
-    ls.opt.result = findLocallyEfficientPoint(ind = ind, fn1 = fn1, fn2 = fn2,
+    ls.opt.result = findLocallyEfficientPoint(ind = ind, fn = fn,
       gradient.list = gradient.list, max.no.steps.ls = max.no.steps.ls,
       scale.step = scale.step, prec.grad = prec.grad, prec.norm = prec.norm,
       prec.angle = prec.angle, ls.method = ls.method, lower = lower,
@@ -151,7 +162,7 @@ runMOGSA = function(ind, fn = NULL, fn1 = NULL, fn2 = NULL,
     if (show.info) {
       catf("-- Exploring a Local Efficient Set in Basin %i", ctr)
     }
-    exploration.result = exploreEfficientSet(ind = ind, fn1 = fn1, fn2 = fn2,
+    exploration.result = exploreEfficientSet(ind = ind, fn = fn,
       gradient.list = ls.opt.result$gradient.list,
       max.no.steps.exploration = max.no.steps.exploration,
       exploration.step = exploration.step,

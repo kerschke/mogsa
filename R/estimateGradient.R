@@ -48,7 +48,6 @@ NULL
 #' @rdname estimateGradient
 #' @export
 estimateGradientSingleDirection = function(fn, ind, side = NULL, prec.grad = 1e-6, check.data = TRUE, lower, upper, ...) {
-  
   if (missing(lower)) {
     lower = ind - prec.grad
   }
@@ -60,32 +59,39 @@ estimateGradientSingleDirection = function(fn, ind, side = NULL, prec.grad = 1e-
     assertFunction(fn, null.ok = FALSE)
   }
   f = fn(ind, ...)
+  
+  # retrieve p and d
+  p = length(f)
   d = length(ind)
+  
   if (is.null(side)) {
     side = rep(TRUE, d)
   }
+  
   ## automatically adjust sides ensuring to stay in bounds
   side[ind < lower + prec.grad] = TRUE
   side[ind > upper - prec.grad] = FALSE
   if (check.data) {
-    assertNumber(f, na.ok = FALSE, null.ok = FALSE)
+    assertNumeric(f, any.missing = FALSE, null.ok = FALSE, len = p)
     assertLogical(side, any.missing = FALSE, len = d)
     assertNumber(prec.grad, na.ok = FALSE, lower = 0, null.ok = FALSE)
   }
+  
   precision.vector = ifelse(side, prec.grad, -prec.grad)
   grad = vapply(seq_len(d), function(i) {
     x = ind
     x[i] = x[i] + precision.vector[i]
     # scale by precision.vector[i] rather than prec.grad to account for the direction of the difference in the numerator
     (fn(x) - f) / precision.vector[i]
-  }, double(1L))
+  }, double(p))
+  
+  # return a matrix of gradient vectors (one row per objective, one column per dimension)
   return(grad)
 }
 
 #' @rdname estimateGradient
 #' @export
 estimateGradientBothDirections = function(fn, ind, prec.grad = 1e-4, check.data = TRUE, lower, upper, ...) {
-  
   if (missing(lower)) {
     lower = ind - prec.grad
   }
@@ -97,7 +103,9 @@ estimateGradientBothDirections = function(fn, ind, prec.grad = 1e-4, check.data 
     assertFunction(fn, null.ok = FALSE)
     assertNumber(prec.grad, na.ok = FALSE, lower = 0, null.ok = FALSE)
   }
+  
   d = length(ind)
+  
   if (any(ind < lower + prec.grad) || any(ind > upper - prec.grad)) {
     ## for those values, where the individual is to close to the lower bound,
     ## compute the gradient in positive direction (otherwise in negative)
@@ -117,7 +125,7 @@ estimateGradientBothDirections = function(fn, ind, prec.grad = 1e-4, check.data 
       x.pos[i] = x.pos[i] + prec.grad
       x.neg[i] = x.neg[i] - prec.grad
       (fn(x.pos) - fn(x.neg)) / (2 * prec.grad)
-    }, double(1L))
+    }, double(p))
   }
   return(grad)
 }
