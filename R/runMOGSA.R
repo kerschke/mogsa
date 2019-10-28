@@ -61,40 +61,24 @@
 #'   pch = as.integer(mogsa.result$type) + 14L)
 #' legend("topright", pch = 15:18, col = 2:5, legend = levels(mogsa.result$type))
 #' @export
-runMOGSA = function(ind, fn = NULL, fn1 = NULL, fn2 = NULL,
-  max.no.basins = 15L, max.no.steps.ls = 600L, max.no.steps.exploration = 100L,
-  scale.step = 0.5, exploration.step = 0.2,
-  prec.grad = 1e-6, prec.norm = 1e-6, prec.angle = 1e-4, ls.method = "both",
-  lower, upper, check.data = TRUE, show.info = TRUE, allow.restarts = TRUE) {
+runMOGSA = function(ind, fn = NULL, max.no.basins = 15L, max.no.steps.ls = 600L,
+                    max.no.steps.exploration = 100L, scale.step = 0.5, exploration.step = 0.2,
+                    prec.grad = 1e-6, prec.norm = 1e-6, prec.angle = 1e-4, ls.method = "both",
+                    check.data = TRUE, show.info = TRUE, allow.restarts = TRUE) {
 
   # create unified objective function and check plausibility
-  if (is.null(fn) & (is.null(fn1) || is.null(fn2))) {
-    stop("Either provide (i) fn or (ii) fn1 and fn2.")
+  if (!isSmoofFunction(fn)) {
+    stop("Please provide a smoof function fn.")
   }
   
-  if (is.null(fn1) || is.null(fn2)) {
-    assertFunction(fn)
-  } else {
-    if (!is.null(fn)) {
-      warning("As the single-objective functions fn1 and fn2 are provided,
-      the bi-objective function fn will be ignored.")
-    }
-    
-    assertFunction(fn1)
-    assertFunction(fn2)
-    fn = function(...) return(c(fn1(...), fn2(...)))
-    fn1 = NULL
-    fn2 = NULL
-  }
-  
-  # extract dimensionality from starting individual
-  d = length(ind)
-  
-  # retrieve number of features p
-  p = length(fn(ind))
+  # extract information from smoof
+  d = getNumberOfParameters(fn)
+  p = getNumberOfObjectives(fn)
+  lower = getLowerBoxConstraints(fn)
+  upper = getUpperBoxConstraints(fn)
   
   if (p != 2L) {
-    stop("Only bi-objective functions are supported at the moment.")
+    stop("Only bi-objective functions are currently supported")
   }
   
   # perform sanity checks
@@ -109,30 +93,18 @@ runMOGSA = function(ind, fn = NULL, fn1 = NULL, fn2 = NULL,
   assertNumber(prec.angle, lower = mc.min, upper = 180, null.ok = FALSE)
   assertLogical(check.data, any.missing = FALSE, len = 1L, null.ok = FALSE)
   
-  # TODO extract lower and upper automatically for smoof functions
-  if (missing(lower)) {
-    lower = rep(-Inf, d)
-  } else if ((length(lower) == 1L) & (d != 1L)) {
-    lower = rep(lower, d)
-  }
-  if (missing(upper)) {
-    upper = rep(Inf, d)
-  } else if ((length(upper) == 1L) & (d != 1L)) {
-    upper = rep(upper, d)
-  }
   assertNumeric(lower, len = d, any.missing = FALSE, null.ok = FALSE)
   assertNumeric(upper, len = d, any.missing = FALSE, null.ok = FALSE)
-  # each dimension should contain more than one point
   assertTRUE(all(lower < upper))
+  
   assertChoice(ls.method, choices = c("both", "bisection", "mo-ls"), null.ok = FALSE)
   assertLogical(show.info, any.missing = FALSE, len = 1L, null.ok = FALSE)
 
   ## actual algorithm loop
   ## FIXME: so far, it is hard-coded for p = 2L
   
-  sp = seq_len(p)
   opt.path = matrix(ind, nrow = 1L)
-  fn.evals = matrix(0L, nrow = 1L, ncol = p)
+  fn.evals = matrix(0L, nrow = 1L, ncol = 1L)
   gradient.list = vector(mode = "list", length = p)
   ls.steps = exploration.steps = external.steps = NULL
   for (ctr in seq_len(max.no.basins)) {
@@ -150,7 +122,7 @@ runMOGSA = function(ind, fn = NULL, fn1 = NULL, fn2 = NULL,
 
     ## update function evaluations
     i = nrow(fn.evals)
-    fn.evals[i, sp] = fn.evals[i, sp] + ls.opt.result$fn.evals[1L, sp]
+    fn.evals[i, 1L] = fn.evals[i, 1L] + ls.opt.result$fn.evals[1L, 1L]
     fn.evals = rbind(fn.evals, ls.opt.result$fn.evals[-1L,, drop = FALSE])
 
     # append local search optimization path to the current one
@@ -162,6 +134,7 @@ runMOGSA = function(ind, fn = NULL, fn1 = NULL, fn2 = NULL,
     if (show.info) {
       catf("-- Exploring a Local Efficient Set in Basin %i", ctr)
     }
+
     exploration.result = exploreEfficientSet(ind = ind, fn = fn,
       gradient.list = ls.opt.result$gradient.list,
       max.no.steps.exploration = max.no.steps.exploration,
@@ -177,9 +150,10 @@ runMOGSA = function(ind, fn = NULL, fn1 = NULL, fn2 = NULL,
     # starting position in an adjacent (and better) basin for the next
     # iteration of the for-loop
     i = nrow(fn.evals)
-    fn.evals[i, sp] = fn.evals[i, sp] + exploration.result$fn.evals[1L, sp]
+    fn.evals[i, 1L] = fn.evals[i, 1L] + exploration.result$fn.evals[1L, 1L]
     fn.evals = rbind(fn.evals, exploration.result$fn.evals[-1L,, drop = FALSE])
     opt.path = rbind(opt.path, exploration.result$opt.path[-1L,, drop = FALSE])
+    
     if (!exploration.result$end1$is.local) {
       opt.path = rbind(opt.path, exploration.result$end1$external, exploration.result$end2$external)
       fn.evals = rbind(fn.evals, exploration.result$end1$evals, exploration.result$end2$evals)
@@ -205,9 +179,9 @@ runMOGSA = function(ind, fn = NULL, fn1 = NULL, fn2 = NULL,
   colnames(opt.path) = sprintf("x%i", seq_len(d))
   fn.evals = apply(fn.evals, 2, cumsum)
   if (!is.matrix(fn.evals)) {
-    fn.evals = matrix(fn.evals, ncol = p)
+    fn.evals = matrix(fn.evals, ncol = 1L)
   }
-  colnames(fn.evals) = sprintf("fn%i.evals", seq_len(p))
+  colnames(fn.evals) = c("fn.evals")
   rownames(opt.path) = rownames(fn.evals) = NULL
   opt.path = cbind(opt.path, fn.evals)
 
