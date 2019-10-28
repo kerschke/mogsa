@@ -73,7 +73,6 @@ performWeightedBisectionOptimization = function(x1, x2, fn, g1 = NULL, g2 = NULL
   d = length(x1)
   ## approximate MO gradients (if not provided) per objective
   if (is.null(g1)) {
-    # TODO fix fn1/fn2 split here
     g = estimateGradientBothDirections(
       fn = fn, ind = x1, prec.grad = prec.grad, lower = lower, upper = upper)
     
