@@ -69,7 +69,7 @@ performWeightedBisectionOptimization = function(x1, x2, fn, g1 = NULL, g2 = NULL
   ## FIXME: currently only fn1 and fn2 supported (hard-coded)
   p = 2L
   sp = seq_len(p)
-  fn.evals = matrix(0L, nrow = 2L, ncol = p)
+  fn.evals = matrix(0L, nrow = 2L, ncol = 1L)
   d = length(x1)
   ## approximate MO gradients (if not provided) per objective
   if (is.null(g1)) {
@@ -85,7 +85,7 @@ performWeightedBisectionOptimization = function(x1, x2, fn, g1 = NULL, g2 = NULL
       prec = prec.norm
     )
     
-    fn.evals[1L, seq_len(p)] = p * d
+    fn.evals[1L,] = p * d
     g1 = -(v1 + v2)
   }
   if (is.null(g2)) {
@@ -101,7 +101,7 @@ performWeightedBisectionOptimization = function(x1, x2, fn, g1 = NULL, g2 = NULL
       prec = prec.norm
     )
     
-    fn.evals[2L, seq_len(p)] = p * d
+    fn.evals[2L,] = p * d
     g2 = -(v1 + v2)
   }
 
@@ -139,8 +139,7 @@ performWeightedBisectionOptimization = function(x1, x2, fn, g1 = NULL, g2 = NULL
       prec = prec.norm
     )
     
-    fn.evals[i, 1L] = fn.evals[i, 1L] + p * d
-    fn.evals[i, 2L] = fn.evals[i, 2L] + p * d
+    fn.evals[i,] = fn.evals[i,] + p * d
 
     if (computeVectorLengthCPP(v1) == 0 || computeVectorLengthCPP(v2) == 0) {
       ## local optimum for one of the objectives

@@ -105,8 +105,8 @@ findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2
   ## Initialization:
   p = length(gradient.list)
   sp = seq_len(p)
-  fn.evals = matrix(0L, nrow = 1L, ncol = p)
-  colnames(fn.evals) = sprintf("fn%i.evals", seq_len(p))
+  fn.evals = matrix(0L, nrow = 1L, ncol = 1L)
+  colnames(fn.evals) = c("fn.evals")
   opt.path = matrix(ind, nrow = 1L)
   restart.counter = 0L
   j = 0L # counter for the iterations since last restart
@@ -123,7 +123,7 @@ findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2
     offspring = gradient.step$offspring
 
     ## update function evaluations
-    fn.evals[i, sp] = fn.evals[i, sp] + gradient.step$fn.evals[1L, sp]
+    fn.evals[i, 1L] = fn.evals[i, 1L] + gradient.step$fn.evals[1L, 1L]
 
     if (is.null(offspring)) {
       ## if there is no offspring (= NULL), the current
@@ -234,7 +234,7 @@ findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2
       ## x3, but without any function evaluations, whereas
       ## mo.ls.opt.result provides further information on x3
       ## within its first row
-      fn.evals[i, sp] = fn.evals[i, sp] + mo.ls.opt.result$fn.evals[1L, sp]
+      fn.evals[i, 1L] = fn.evals[i, 1L] + mo.ls.opt.result$fn.evals[1L, 1L]
       fn.evals = rbind(fn.evals, mo.ls.opt.result$fn.evals[-1L,, drop = FALSE])
       opt.path = rbind(opt.path, mo.ls.opt.result$opt.path[-1L,, drop = FALSE])
       i = nrow(opt.path)

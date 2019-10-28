@@ -85,7 +85,7 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
 
   ## initialize
   p = length(gradient.list)
-  fn.evals = matrix(0L, nrow = 1L, ncol = p)
+  fn.evals = matrix(0L, nrow = 1L, ncol = 1L)
   opt.path = matrix(ind, nrow = 1L)
 
   ## FIXME: hard-coded for p = 2
@@ -93,8 +93,6 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
   g1 = gradient.list$g1
   g2 = gradient.list$g2
 
-  # TODO fn1, fn2 -> fn
-  
   # compute gradients if missing
   if (is.null(g1) || is.null(g2)) {
     g = -estimateGradientBothDirections(fn = fn, ind = ind,
@@ -103,8 +101,7 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
     g1 = g[1,]
     g2 = g[2,]
     
-    fn.evals[1L, 1L] = p * d
-    fn.evals[1L, 2L] = p * d
+    fn.evals[1L,1L] = p * d
   }
   
   grad1 = g1 = normalizeVectorCPP(vec = g1, prec = prec.norm)
@@ -146,24 +143,15 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
     g2.off = g.off[2,]
     g2.off = normalizeVectorCPP(vec = g2.off, prec = prec.norm)
     
-    if (computeVectorLengthCPP(g1.off) == 0) {
-      ## if the offspring's gradient in the direction of fn1 is 0, we must have
-      ## reached a local optimum of fn1 and can't proceed
+    if (computeVectorLengthCPP(g1.off) == 0 || computeVectorLengthCPP(g2.off) == 0) {
+      ## if the offspring's gradient in the direction of fn1 or fn2 is 0, we must have
+      ## reached a local optimum and can't proceed
       opt.path = rbind(opt.path, offspring)
+      
+      ## costs for computing g.off, attributed to this step in this case
       fn.evals = rbind(fn.evals, 0L)
-      ## costs for computing g1.off
-      fn.evals[nrow(fn.evals), 1L] = p * d
-      break
-    }
-
-    if (computeVectorLengthCPP(g2.off) == 0) {
-      ## if the offspring's gradient in the direction of fn2 is 0, we can't
-      ## move further; note that this scenario is unlikely (if even possible?!)
-      ## as we were moving in the direction of fn1
-      opt.path = rbind(opt.path, offspring)
-      fn.evals = rbind(fn.evals, 0L)
-      ## costs for computing g1.off and g2.off
-      fn.evals[nrow(fn.evals), 1:2] = p * d
+      fn.evals[nrow(fn.evals),1L] = p * d
+      
       break
     }
 
@@ -175,9 +163,10 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
       ## individual's gradients in the direction of fn1 (angle.grad1) show in
       ## similar directions (< 90 degree), we can move on
       opt.path = rbind(opt.path, offspring)
+      
+      ## costs for computing g.off, attributed to this step in this case
       fn.evals = rbind(fn.evals, 0L)
-      ## costs for computing g1.off and g2.off
-      fn.evals[nrow(fn.evals), 1:2] = p * d
+      fn.evals[nrow(fn.evals),1L] = p * d
 
       ## replace the "old" gradient in direction of fn1 by the current
       ## one and continue with the next iteration of the loop
@@ -187,9 +176,12 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
       ## now, the offspring must have been an external point and we can store
       ## it as such
       external1 = offspring
-      fn.evals.ext1 = matrix(0L, nrow = 1L, ncol = p)
-      fn.evals.ext1[1:2] = p * d
-      names(fn.evals.ext1) = sprintf("fn%i.evals", seq_len(p))
+      
+      # costs for gradient, attributed to external point
+      fn.evals.ext1 = matrix(0L, nrow = 1L, ncol = 1L)
+      fn.evals.ext1[1L,] = p * d
+      
+      names(fn.evals.ext1) = c("fn.evals")
       if (angle.grad1 > 90) {
         ## if the direction of the gradients (of fn1) have changed between the
         ## offspring and its predecessor, we must have left the efficient set
@@ -232,25 +224,16 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
     
     g2.off = g.off[2,]
     g2.off = normalizeVectorCPP(vec = g2.off, prec = prec.norm)
-    
-    if (computeVectorLengthCPP(g2.off) == 0) {
+
+    if (computeVectorLengthCPP(g2.off) == 0 || computeVectorLengthCPP(g1.off) == 0) {
       ## if the offspring's gradient in the direction of fn2 is 0, we must have
       ## reached a local optimum of fn2 and can't proceed
       opt.path = rbind(opt.path, offspring)
+      
+      ## costs for computing g.off, attributed to this step in this case
       fn.evals = rbind(fn.evals, 0L)
-      ## costs for computing g1.off and g2.off
-      fn.evals[nrow(fn.evals), 1:2] = p * d
-      break
-    }
-
-    if (computeVectorLengthCPP(g1.off) == 0) {
-      ## if the offspring's gradient in the direction of fn1 is 0, we can't
-      ## move further; note that this scenario is unlikely (if even possible?!)
-      ## as we were moving in the direction of fn2
-      opt.path = rbind(opt.path, offspring)
-      fn.evals = rbind(fn.evals, 0L)
-      ## costs for computing g1.off
-      fn.evals[nrow(fn.evals), 1L] = p * d
+      fn.evals[nrow(fn.evals),] = p * d
+      
       break
     }
 
@@ -262,9 +245,10 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
       ## individual's gradients in the direction of fn2 (angle.grad2) show in
       ## similar directions (< 90 degree), we can move on
       opt.path = rbind(opt.path, offspring)
+      
+      ## costs for computing g.off, attributed to this step in this case
       fn.evals = rbind(fn.evals, 0L)
-      ## costs for computing g1.off and g2.off
-      fn.evals[nrow(fn.evals), 1:2] = p * d
+      fn.evals[nrow(fn.evals),] = p * d
 
       ## replace the "old" gradient in direction of fn2 by the current
       ## one and continue with the next iteration of the loop
@@ -274,9 +258,12 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
       ## now, the offspring must have been an external point and we can store
       ## it as such
       external2 = offspring
-      fn.evals.ext2 = matrix(0L, nrow = 1L, ncol = p)
-      fn.evals.ext2[1:2] = p * d
-      names(fn.evals.ext2) = sprintf("fn%i.evals", seq_len(p))
+      
+      # costs for gradient, attributed to external point
+      fn.evals.ext2 = matrix(0L, nrow = 1L, ncol = 1L)
+      fn.evals.ext2[1,] = p * d
+      names(fn.evals.ext2) = c("fn.evals")
+      
       if (angle.grad2 > 90) {
         ## if the direction of the gradients (of fn2) have changed between the
         ## offspring and its predecessor, we must have left the efficient set

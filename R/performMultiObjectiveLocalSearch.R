@@ -69,7 +69,7 @@ performMultiObjectiveLocalSearch = function(x1, x2, x3, fn,
   p = 2L
   sp = seq_len(p)
   opt.path = matrix(x3, nrow = 1L)
-  fn.evals = matrix(0L, nrow = 1L, ncol = p)
+  fn.evals = matrix(0L, nrow = 1L, ncol = 1L)
   gradient.list = vector(mode = "list", length = p)
   names(gradient.list) = sprintf("g%i", seq_len(p))
   while (nrow(opt.path) <= max.steps) {
@@ -82,7 +82,7 @@ performMultiObjectiveLocalSearch = function(x1, x2, x3, fn,
       x3 = gradient.step$offspring
 
       ## update function evaluations
-      fn.evals[i, sp] = fn.evals[i, sp] + gradient.step$fn.evals[1L, sp]
+      fn.evals[i,] = fn.evals[i,] + gradient.step$fn.evals[1L,]
 
       if (is.null(x3)) {
         ## if the x2 is a local efficient point, we can stop here without

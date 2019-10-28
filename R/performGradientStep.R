@@ -76,18 +76,19 @@ performGradientStep = function(ind, fn,
   }
 
   p = length(gradient.list)
-  fn.evals = matrix(0L, nrow = 1L, ncol = p)
-  names(fn.evals) = sprintf("fn%i.evals", seq_len(p))
+  fn.evals = matrix(0L, nrow = 1L, ncol = 1L)
+  names(fn.evals) = c("fn.evals")
   
   if(any(sapply(gradient.list, is.null))) {
     ## if gradient is not existent, estimate it
     g = -estimateGradientBothDirections(fn = fn,
                                          ind = ind, prec.grad = prec.grad, check.data = FALSE, lower = lower, upper = upper)
     
+    fn.evals[1L] = p * d
+    
     for(k in 1:nrow(g)) {
       gi = normalizeVectorCPP(g[k,], prec = prec.norm)
       gradient.list[[k]] = gi
-      fn.evals[1L, k] = p * d
       if (all(gi == 0)) {
         ## if the gradient is all zero, we can already stop here as
         ## we have found a single-objective local optimum
