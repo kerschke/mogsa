@@ -68,11 +68,15 @@
 #' res.mo.ls = findLocallyEfficientPoint(c(0.3, 0.5), fn, ls.method = "mo-ls")
 #' points(res.mo.ls$opt.path, pch = 20, lty = 2, type = "o", col = "red")
 #' @export
-findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NULL),
+findLocallyEfficientPoint = function(ind, fn, gradient.mat,
   max.no.steps.ls = 500L, scale.step = 0.5, prec.grad = 1e-6, prec.norm = 1e-6, prec.angle = 1e-4,
-  ls.method = "both", lower, upper, check.data = TRUE, show.info = TRUE, allow.restarts = TRUE) {
+  ls.method = "both", check.data = TRUE, show.info = TRUE, allow.restarts = TRUE) {
 
-  d = length(ind)
+  d = getNumberOfParameters(fn)
+  p = getNumberOfObjectives(fn)
+  lower = getLowerBoxConstraints(fn)
+  upper = getUpperBoxConstraints(fn)
+
   # perform sanity checks
   if (check.data) {
     assertFunction(fn)
@@ -80,30 +84,17 @@ findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2
     assertNumber(prec.grad, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.norm, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.angle, lower = 0, upper = 180, null.ok = FALSE)
-    if (missing(lower)) {
-      lower = rep(-Inf, d)
-    } else if ((length(lower) == 1L) & (d != 1L)) {
-      lower = rep(lower, d)
-    }
-    if (missing(upper)) {
-      upper = rep(Inf, d)
-    } else if ((length(upper) == 1L) & (d != 1L)) {
-      upper = rep(upper, d)
-    }
-    assertNumeric(lower, len = d, any.missing = FALSE, null.ok = FALSE)
-    assertNumeric(upper, len = d, any.missing = FALSE, null.ok = FALSE)
-    assertTRUE(all(lower <= upper))
     assertChoice(ls.method, c("both", "bisection", "mo-ls"), null.ok = FALSE)
     assertLogical(show.info, any.missing = FALSE, len = 1L, null.ok = FALSE)
-    assertList(gradient.list, types = c("numeric", "null", "integerish", "double"), any.missing = TRUE, min.len = 1L, null.ok = FALSE)
-    if (is.null(gradient.list)) {
-      stop("The gradient list needs to consist of p list elements.")
-    }
+    # assertList(gradient.mat, types = c("numeric", "null", "integerish", "double"), any.missing = TRUE, min.len = 1L, null.ok = FALSE)
+    # if (is.null(gradient.mat)) {
+    #   stop("The gradient matrix needs to consist of p matrix rows.")
+    # }
     assertLogical(show.info, any.missing = FALSE, len = 1L, null.ok = FALSE)
   }
 
   ## Initialization:
-  p = length(gradient.list)
+
   sp = seq_len(p)
   fn.evals = matrix(0L, nrow = 1L, ncol = 1L)
   colnames(fn.evals) = c("fn.evals")
@@ -117,9 +108,10 @@ findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2
 
     ## generate offspring
     individual = opt.path[nrow(opt.path),]
-    gradient.step = performGradientStep(ind = individual, fn = fn, gradient.list = gradient.list,
+    gradient.step = performGradientStep(ind = individual, fn = fn, gradient.mat = gradient.mat,
       scale.step = scale.step, prec.grad = prec.grad, prec.norm = prec.norm, prec.angle = prec.angle,
-      lower = lower, upper = upper, check.data = check.data)
+      check.data = check.data)
+
     offspring = gradient.step$offspring
 
     ## update function evaluations
@@ -128,7 +120,7 @@ findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2
     if (is.null(offspring)) {
       ## if there is no offspring (= NULL), the current
       ## individual is already a locally efficient point
-      gradient.list = gradient.step$gradient.list
+      gradient.mat = gradient.step$gradient.mat
       break
     }
 
@@ -139,8 +131,8 @@ findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2
         offspring = runif(n = d, min = lower, max = upper)
         opt.path = rbind(opt.path, offspring)
         fn.evals = rbind(fn.evals, 0L)
-        gradient.list = vector(mode = "list", length = p)
-        names(gradient.list) = sprintf("g%i", seq_len(p))
+        gradient.mat = matrix(NA, nrow = p, ncol = d)
+
         j = 0L
         i = nrow(opt.path)
         if (i == (max.no.steps.ls + 1L)) {
@@ -169,8 +161,7 @@ findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2
       ## if this is still the first loop after a restart, we can move on to the
       ## next iteration of the loop; but should first reset the gradient list
       if (i == 2L) {
-        gradient.list = vector(mode = "list", length = p)
-        names(gradient.list) = sprintf("g%i", seq_len(p))
+        gradient.mat = matrix(NA, nrow = p, ncol = d)
       }
       next
     }
@@ -198,7 +189,7 @@ findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2
         x1 = x1, x2 = x2, fn = fn,
         g1 = v1, g2 = v2, prec.grad = prec.grad,
         prec.norm = prec.norm, max.steps = max.no.steps.ls - i + 1L)
-      gradient.list = bisect.opt.result$gradient.list
+      gradient.mat = bisect.opt.result$gradient.mat
       offsprings = bisect.opt.result$opt.path
 
       ## the first two rows of bisect.opt.result contain information on x1 and
@@ -226,9 +217,8 @@ findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2
       mo.ls.opt.result = performMultiObjectiveLocalSearch(
         x1 = x1, x2 = x2, x3 = x3, fn = fn,
         prec.grad = prec.grad, prec.norm = prec.norm, prec.angle = prec.angle,
-        scale.step = scale.step, lower = lower, upper = upper,
-        max.steps = max.no.steps.ls - i + 1L)
-      gradient.list = mo.ls.opt.result$gradient.list
+        scale.step = scale.step, max.steps = max.no.steps.ls - i + 1L)
+      gradient.mat = mo.ls.opt.result$gradient.mat
       i = nrow(fn.evals)
       ## update last row of fn.evals as this one already contains
       ## x3, but without any function evaluations, whereas
@@ -257,8 +247,8 @@ findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2
       offspring = runif(n = d, min = lower, max = upper)
       opt.path = rbind(opt.path, offspring)
       fn.evals = rbind(fn.evals, 0L)
-      gradient.list = vector(mode = "list", length = p)
-      names(gradient.list) = sprintf("g%i", seq_len(p))
+      gradient.mat = gradient.mat = matrix(NA, nrow = p, ncol = d)
+
       j = 0L
       next
     } else {
@@ -275,5 +265,5 @@ findLocallyEfficientPoint = function(ind, fn, gradient.list = list(g1 = NULL, g2
   }
   rownames(opt.path) = NULL
   rownames(fn.evals) = NULL
-  return(list(opt.path = opt.path, fn.evals = fn.evals, gradient.list = gradient.list))
+  return(list(opt.path = opt.path, fn.evals = fn.evals, gradient.mat = gradient.mat))
 }

@@ -105,7 +105,7 @@ runMOGSA = function(ind, fn = NULL, max.no.basins = 15L, max.no.steps.ls = 600L,
   
   opt.path = matrix(ind, nrow = 1L)
   fn.evals = matrix(0L, nrow = 1L, ncol = 1L)
-  gradient.list = vector(mode = "list", length = p)
+  gradient.mat = matrix(NA, nrow = p, ncol = d)
   ls.steps = exploration.steps = external.steps = NULL
   for (ctr in seq_len(max.no.basins)) {
     ind = opt.path[nrow(opt.path),]
@@ -114,11 +114,10 @@ runMOGSA = function(ind, fn = NULL, max.no.basins = 15L, max.no.steps.ls = 600L,
       catf("-- Performing Local Search in Basin %i", ctr)
     }
     ls.opt.result = findLocallyEfficientPoint(ind = ind, fn = fn,
-      gradient.list = gradient.list, max.no.steps.ls = max.no.steps.ls,
+      gradient.mat = gradient.mat, max.no.steps.ls = max.no.steps.ls,
       scale.step = scale.step, prec.grad = prec.grad, prec.norm = prec.norm,
-      prec.angle = prec.angle, ls.method = ls.method, lower = lower,
-      upper = upper, check.data = check.data, show.info = show.info,
-      allow.restarts = allow.restarts)
+      prec.angle = prec.angle, ls.method = ls.method, check.data = check.data,
+      show.info = show.info, allow.restarts = allow.restarts)
 
     ## update function evaluations
     i = nrow(fn.evals)
@@ -136,12 +135,11 @@ runMOGSA = function(ind, fn = NULL, max.no.basins = 15L, max.no.steps.ls = 600L,
     }
 
     exploration.result = exploreEfficientSet(ind = ind, fn = fn,
-      gradient.list = ls.opt.result$gradient.list,
+      gradient.mat = ls.opt.result$gradient.mat,
       max.no.steps.exploration = max.no.steps.exploration,
       exploration.step = exploration.step,
       prec.grad = prec.grad, prec.norm = prec.norm, prec.angle = prec.angle,
-      lower = lower, upper = upper, check.data = check.data,
-      show.info = show.info)
+      check.data = check.data, show.info = show.info)
 
     # append opt.path from the exploration.result to the current opt.path;
     # in cases, in which the local efficiency of the set could be confirmed
@@ -157,11 +155,11 @@ runMOGSA = function(ind, fn = NULL, max.no.basins = 15L, max.no.steps.ls = 600L,
     if (!exploration.result$end1$is.local) {
       opt.path = rbind(opt.path, exploration.result$end1$external, exploration.result$end2$external)
       fn.evals = rbind(fn.evals, exploration.result$end1$evals, exploration.result$end2$evals)
-      gradient.list = exploration.result$end2$gradient.list
+      gradient.mat = exploration.result$end2$gradient.mat
     } else {
       opt.path = rbind(opt.path, exploration.result$end2$external, exploration.result$end1$external)
       fn.evals = rbind(fn.evals, exploration.result$end2$evals, exploration.result$end1$evals)
-      gradient.list = exploration.result$end1$gradient.list
+      gradient.mat = exploration.result$end1$gradient.mat
     }
     exploration.steps = c(exploration.steps, nrow(exploration.result$opt.path) - 1L)
     external.steps = c(external.steps,

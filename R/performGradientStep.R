@@ -36,66 +36,59 @@
 #' # Here, we have found the optimum of fn1:
 #' performGradientStep(c(0.2, 1), fn)
 #' @export
-performGradientStep = function(ind, fn,
-  gradient.list = list(g1 = NULL, g2 = NULL), scale.step = 0.5,
-  prec.grad = 1e-6, prec.norm = 1e-6, prec.angle = 1e-4,
-  lower, upper, check.data = TRUE) {
+performGradientStep = function(ind, fn, gradient.mat, scale.step = 0.5,
+  prec.grad = 1e-6, prec.norm = 1e-6, prec.angle = 1e-4, check.data = TRUE) {
 
   assertNumeric(ind, any.missing = FALSE, null.ok = FALSE)
-  d = length(ind)
+  
+  d = getNumberOfParameters(fn)
+  p = getNumberOfObjectives(fn)
+  lower = getLowerBoxConstraints(fn)
+  upper = getUpperBoxConstraints(fn)
+
   if (check.data) {
     assertFunction(fn)
     assertNumber(scale.step, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.grad, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.norm, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.angle, lower = 0, upper = 180, null.ok = FALSE)
-    if (missing(lower)) {
-      lower = rep(-Inf, d)
-    } else if ((length(lower) == 1L) & (d != 1L)) {
-      lower = rep(lower, d)
-    }
-    if (missing(upper)) {
-      upper = rep(Inf, d)
-    } else if ((length(upper) == 1L) & (d != 1L)) {
-      upper = rep(upper, d)
-    }
-    assertNumeric(lower, len = d, any.missing = FALSE, null.ok = FALSE)
-    assertNumeric(upper, len = d, any.missing = FALSE, null.ok = FALSE)
-    assertTRUE(all(lower <= upper))
-    assertList(gradient.list, types = c("numeric", "null", "integerish", "double"), any.missing = TRUE, min.len = 1L, null.ok = FALSE)
-    if (is.null(gradient.list)) {
-      stop("The gradient list needs to consist of p list elements.")
-    } else {
-      for (k in seq_along(gradient.list)) {
-        gradient.list.element = gradient.list[[k]]
-        if (!is.null(gradient.list.element)) {
-          assertNumeric(gradient.list.element, len = d, any.missing = FALSE, null.ok = FALSE)
-        }
-      }
-    }
+    # assertList(gradient.list, types = c("numeric", "null", "integerish", "double"), any.missing = TRUE, min.len = 1L, null.ok = FALSE)
+    # if (is.null(gradient.list)) {
+    #   stop("The gradient list needs to consist of p list elements.")
+    # } else {
+    #   for (k in seq_along(gradient.list)) {
+    #     gradient.list.element = gradient.list[[k]]
+    #     if (!is.null(gradient.list.element)) {
+    #       assertNumeric(gradient.list.element, len = d, any.missing = FALSE, null.ok = FALSE)
+    #     }
+    #   }
+    # }
   }
 
-  p = length(gradient.list)
   fn.evals = matrix(0L, nrow = 1L, ncol = 1L)
   names(fn.evals) = c("fn.evals")
   
-  if(any(sapply(gradient.list, is.null))) {
+  if(is.null(gradient.mat)) {
+    gradient.mat = matrix(data = NA, nrow = p, ncol = d)
+  }
+  
+  if(any(apply(gradient.mat, 1, is.na))) {
     ## if gradient is not existent, estimate it
     g = -estimateGradientBothDirections(fn = fn,
-                                         ind = ind, prec.grad = prec.grad, check.data = FALSE, lower = lower, upper = upper)
+                                         ind = ind, prec.grad = prec.grad, check.data = FALSE)
     
     fn.evals[1L] = p * d
     
     for(k in 1:nrow(g)) {
       gi = normalizeVectorCPP(g[k,], prec = prec.norm)
-      gradient.list[[k]] = gi
+      gradient.mat[k,] = gi
       if (all(gi == 0)) {
         ## if the gradient is all zero, we can already stop here as
         ## we have found a single-objective local optimum
         return(list(
           offspring = NULL,
           fn.evals = fn.evals,
-          gradient.list = gradient.list
+          gradient.mat = gradient.mat
         ))
       }
     }
@@ -104,8 +97,8 @@ performGradientStep = function(ind, fn,
   ## FIXME: this part currently only works for p = 2
   ## if one is between the peaks of fn1 and fn2, move towards a point along
   ## their efficient set
-  g1 = gradient.list[[1L]]
-  g2 = gradient.list[[2L]]
+  g1 = gradient.mat[1L,]
+  g2 = gradient.mat[2L,]
   angle = computeAngleCPP(vec1 = g1, vec2 = g2, prec = prec.norm)
   if (abs(180 - angle) < prec.angle) {
     # if the angle between both gradients is (approximately) 180 degree,
@@ -113,7 +106,7 @@ performGradientStep = function(ind, fn,
     return(list(
       offspring = NULL,
       fn.evals = fn.evals,
-      gradient.list = gradient.list
+      gradient.mat = gradient.mat
     ))
   } else {
     # FIXME: analyze, which of the following two approaches works better
@@ -125,7 +118,7 @@ performGradientStep = function(ind, fn,
     return(list(
       offspring = offspring,
       fn.evals = fn.evals,
-      gradient.list = gradient.list
+      gradient.mat = gradient.mat
     ))
   }
 }

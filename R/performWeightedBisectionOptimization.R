@@ -180,6 +180,6 @@ performWeightedBisectionOptimization = function(x1, x2, fn, g1 = NULL, g2 = NULL
   return(list(
     opt.path = opt.path,
     fn.evals = fn.evals,
-    gradient.list = list(g1 = -v1, g2 = -v2),
+    gradient.mat = rbind(-v1, -v2),
     found.optimum = found.optimum))
 }

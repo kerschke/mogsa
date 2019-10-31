@@ -44,54 +44,45 @@
 #' # c(0.2, 1) is obviously a local optimum of fn1, so let's explore the efficient set from there:
 #' exploreEfficientSet(c(0.2, 1), fn1, fn2, max.no.steps.exploration = 50L, exploration.step = 0.05)
 #' @export
-exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NULL),
+exploreEfficientSet = function(ind, fn, gradient.mat,
   max.no.steps.exploration = 400L, exploration.step = 0.2, prec.grad = 1e-6,
-  prec.norm = 1e-6, prec.angle = 1e-4, lower, upper, check.data = TRUE, show.info = TRUE) {
+  prec.norm = 1e-6, prec.angle = 1e-4, check.data = TRUE, show.info = TRUE) {
 
   assertNumeric(ind, any.missing = FALSE, null.ok = FALSE)
-  d = length(ind)
   if (check.data) {
     assertFunction(fn)
     assertNumber(exploration.step, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.grad, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.norm, lower = 0, finite = TRUE, null.ok = FALSE)
-    if (missing(lower)) {
-      lower = rep(-Inf, d)
-    } else if ((length(lower) == 1L) & (d != 1L)) {
-      lower = rep(lower, d)
-    }
-    if (missing(upper)) {
-      upper = rep(Inf, d)
-    } else if ((length(upper) == 1L) & (d != 1L)) {
-      upper = rep(upper, d)
-    }
-    assertNumeric(lower, len = d, any.missing = FALSE, null.ok = FALSE)
-    assertNumeric(upper, len = d, any.missing = FALSE, null.ok = FALSE)
-    assertTRUE(all(lower <= upper))
-    assertList(gradient.list, types = c("numeric", "null", "integerish", "double"),
-      any.missing = TRUE, min.len = 1L, null.ok = FALSE)
-    if (is.null(gradient.list)) {
-      stop("The gradient list needs to consist of p list elements.")
-    }
+    # assertList(gradient.mat, types = c("numeric", "null", "integerish", "double"),
+    #   any.missing = TRUE, min.len = 1L, null.ok = FALSE)
+    # if (is.null(gradient.mat)) {
+    #   stop("The gradient list needs to consist of p list elements.")
+    # }
     assertLogical(show.info, any.missing = FALSE, len = 1L, null.ok = FALSE)
     # ensure that ind is locally efficient
-    if (show.info && !is.null(performGradientStep(ind = ind, fn = fn,
-      lower = lower, upper = upper, prec.grad = prec.grad,
-      prec.norm = prec.norm, prec.angle = prec.angle,
+    if (show.info && !is.null(performGradientStep(ind = ind, fn = fn, gradient.mat = gradient.mat,
+      prec.grad = prec.grad, prec.norm = prec.norm, prec.angle = prec.angle,
       check.data = FALSE)$offspring)) {
       catf("ATTENTION: The exploration of the efficient set was started from a locally non-efficient point.")
     }
   }
 
   ## initialize
-  p = length(gradient.list)
+  d = getNumberOfParameters(fn)
+  p = getNumberOfObjectives(fn)
+  lower = getLowerBoxConstraints(fn)
+  upper = getUpperBoxConstraints(fn)
+
   fn.evals = matrix(0L, nrow = 1L, ncol = 1L)
   opt.path = matrix(ind, nrow = 1L)
 
   ## FIXME: hard-coded for p = 2
   ## single-objective gradients of the very first individual
-  g1 = gradient.list$g1
-  g2 = gradient.list$g2
+  if (nrow(gradient.mat) >= 2) {
+    g1 = gradient.mat[1,]
+    g2 = gradient.mat[2,]
+  }
 
   # compute gradients if missing
   if (is.null(g1) || is.null(g2)) {
@@ -111,9 +102,8 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
   ## initialize external points per objective, their gradient lists,
   ## as well as their costs
   external1 = external2 = NULL
-  ext1.gradient.list = vector(mode = "list", length = p)
-  names(ext1.gradient.list) = sprintf("g%i", seq_len(p))
-  ext2.gradient.list = ext1.gradient.list
+  ext1.gradient.mat = rbind(g1, g2)
+  ext2.gradient.mat = ext1.gradient.mat
   fn.evals.ext1 = fn.evals.ext2 = NULL
 
   ## explore along fn1
@@ -180,8 +170,8 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
       # costs for gradient, attributed to external point
       fn.evals.ext1 = matrix(0L, nrow = 1L, ncol = 1L)
       fn.evals.ext1[1L,] = p * d
-      
       names(fn.evals.ext1) = c("fn.evals")
+      
       if (angle.grad1 > 90) {
         ## if the direction of the gradients (of fn1) have changed between the
         ## offspring and its predecessor, we must have left the efficient set
@@ -190,7 +180,7 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
       } else {
         ## otherwise, we must even have passed a ridge into a new basin
         is.local1 = TRUE
-        ext1.gradient.list = list(g1 = g1.off, g2 = g2.off)
+        ext1.gradient.mat = g.off
         break
       }
     }
@@ -261,7 +251,7 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
       
       # costs for gradient, attributed to external point
       fn.evals.ext2 = matrix(0L, nrow = 1L, ncol = 1L)
-      fn.evals.ext2[1,] = p * d
+      fn.evals.ext2[1L,] = p * d
       names(fn.evals.ext2) = c("fn.evals")
       
       if (angle.grad2 > 90) {
@@ -272,7 +262,7 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
       } else {
         ## otherwise, we must even have passed a ridge into a new basin
         is.local2 = TRUE
-        ext2.gradient.list = list(g1 = g1.off, g2 = g2.off)
+        ext2.gradient.mat = g.off
         break
       }
     }
@@ -287,13 +277,13 @@ exploreEfficientSet = function(ind, fn, gradient.list = list(g1 = NULL, g2 = NUL
     end1 = list(
       is.local = is.local1,
       external = external1,
-      gradient.list = ext1.gradient.list,
+      gradient.mat = ext1.gradient.mat,
       evals = fn.evals.ext1
     ),
     end2 = list(
       is.local = is.local2,
       external = external2,
-      gradient.list = ext2.gradient.list,
+      gradient.mat = ext2.gradient.mat,
       evals = fn.evals.ext2
     )
   ))

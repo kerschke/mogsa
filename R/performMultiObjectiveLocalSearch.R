@@ -63,22 +63,23 @@
 #' @export
 performMultiObjectiveLocalSearch = function(x1, x2, x3, fn,
   prec.grad = 1e-6, prec.norm = 1e-6, prec.angle = 1e-4,
-  scale.step = 0.5, lower, upper, max.steps = 1000L) {
+  scale.step = 0.5, max.steps = 1000L) {
 
-  d = length(x1)
-  p = 2L
+  d = getNumberOfParameters(fn)
+  p = getNumberOfObjectives(fn)
+
   sp = seq_len(p)
   opt.path = matrix(x3, nrow = 1L)
   fn.evals = matrix(0L, nrow = 1L, ncol = 1L)
-  gradient.list = vector(mode = "list", length = p)
-  names(gradient.list) = sprintf("g%i", seq_len(p))
+  gradient.mat = matrix(NA, nrow = p, ncol = d)
+  
   while (nrow(opt.path) <= max.steps) {
     if (nrow(opt.path) > 1L) {
       i = nrow(opt.path)
       gradient.step = performGradientStep(ind = x2, fn = fn,
-        gradient.list = gradient.list,
+        gradient.mat = gradient.mat,
         scale.step = scale.step, prec.grad = prec.grad,
-        prec.norm = prec.norm, prec.angle = prec.angle, lower = lower, upper = upper)
+        prec.norm = prec.norm, prec.angle = prec.angle)
       x3 = gradient.step$offspring
 
       ## update function evaluations
@@ -87,11 +88,11 @@ performMultiObjectiveLocalSearch = function(x1, x2, x3, fn,
       if (is.null(x3)) {
         ## if the x2 is a local efficient point, we can stop here without
         ## adding any new points to the optimization path
-        gradient.list = gradient.step$gradient.list
+        gradient.mat = gradient.step$gradient.mat
         break
       } else if (identical(x2, x3)) {
         ## in the case, where x2 and x3 are identical, we are stuck in a trap;
-        ## --> gradient.list should be reset
+        ## --> gradient.mat should be reset
         break
       } else {
         opt.path = rbind(opt.path, x3)
@@ -133,6 +134,6 @@ performMultiObjectiveLocalSearch = function(x1, x2, x3, fn,
   return(list(
     opt.path = opt.path,
     fn.evals = fn.evals,
-    gradient.list = gradient.list,
+    gradient.mat = gradient.mat,
     found.optimum = is.null(x3)))
 }

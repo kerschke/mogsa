@@ -87,21 +87,17 @@ estimateGradientSingleDirection = function(fn, ind, side = NULL, prec.grad = 1e-
 
 #' @rdname estimateGradient
 #' @export
-estimateGradientBothDirections = function(fn, ind, prec.grad = 1e-4, check.data = TRUE, lower, upper, ...) {
-  if (missing(lower)) {
-    lower = ind - prec.grad
-  }
-  if (missing(upper)) {
-    upper = ind + prec.grad
-  }
+estimateGradientBothDirections = function(fn, ind, prec.grad = 1e-4, check.data = TRUE, ...) {
+  d = getNumberOfParameters(fn)
+  p = getNumberOfObjectives(fn)
+  lower = getLowerBoxConstraints(fn)
+  upper = getUpperBoxConstraints(fn)
+  
   if (check.data) {
     assertNumeric(ind, any.missing = FALSE, null.ok = FALSE)
     assertFunction(fn, null.ok = FALSE)
     assertNumber(prec.grad, na.ok = FALSE, lower = 0, null.ok = FALSE)
   }
-  
-  d = getNumberOfParameters(fn)
-  p = getNumberOfObjectives(fn)
   
   if (any(ind < lower + prec.grad) || any(ind > upper - prec.grad)) {
     ## for those values, where the individual is to close to the lower bound,
