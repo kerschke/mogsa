@@ -59,7 +59,7 @@ estimateGradientSingleDirection = function(fn, ind, side = NULL, prec.grad = 1e-
   lower = getLowerBoxConstraints(fn)
   upper = getUpperBoxConstraints(fn)
   
-  f = fn(ind, ...)
+  f = fn(ind)
   
   if (is.null(side)) {
     side = rep(TRUE, d)

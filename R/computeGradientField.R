@@ -36,36 +36,28 @@
 #' @export
 computeGradientField = function(points, fn,
   scale.step = 0.5, prec.grad = 1e-6, prec.norm = 1e-6,
-  prec.angle = 1e-4, parallelize = FALSE, lower, upper) {
-  
-  if (missing(lower)) {
-    lower = apply(points, 2, min) - prec.grad
-  }
-  if (missing(upper)) {
-    upper = apply(points, 2, max) + prec.grad
-  }
+  prec.angle = 1e-4, parallelize = FALSE) {
   
   if (parallelize) {
     r = parallel::mclapply(seq_row(points), function(i) {
       ind = as.numeric(points[i,])
-      return(calcMOGradient(ind, fn, prec.grad, prec.norm, prec.angle, lower, upper))
+      return(calcMOGradient(ind, fn, prec.grad, prec.norm, prec.angle))
     })
   } else {
     r = lapply(seq_row(points), function(i) {
       ind = as.numeric(points[i,])
-      return(calcMOGradient(ind, fn, prec.grad, prec.norm, prec.angle, lower, upper))
+      return(calcMOGradient(ind, fn, prec.grad, prec.norm, prec.angle))
     })
   }
   
   return(as.matrix(do.call(rbind, r)))
 }
 
-calcMOGradient = function(ind, fn, prec.grad, prec.norm, prec.angle, lower, upper) {
+calcMOGradient = function(ind, fn, prec.grad, prec.norm, prec.angle) {
   
   len = length(ind)
   
-  g = -estimateGradientBothDirections(fn = fn, ind = ind, prec.grad = prec.grad,
-                                      lower = lower, upper = upper, check.data = FALSE)
+  g = -estimateGradientBothDirections(fn = fn, ind = ind, prec.grad = prec.grad, check.data = FALSE)
   g1 = normalizeVectorCPP(vec = g[1,], prec = prec.norm)
   if (all(g1 == 0)) {
     # if the gradient of fn1 is zero, this has to be a local efficient point
