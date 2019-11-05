@@ -383,7 +383,7 @@ IntegerVector convertCellID2IndicesCPP(int cellID, IntegerVector dims) {
 
 
 // [[Rcpp::export]]
-NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm) {
+NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm, bool fixDiagonals) {
 // NumericVector cumulateHighDimensionalGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm) {
 
   // FIXME: so far, the code only supports 2D-problems
@@ -493,7 +493,15 @@ NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradient
         // sum of gradient lengths to the cells of the path
         for (int j = pathLength; j > 0; j--) {
           int index = path[j - 1];
-          a += gradientLengths[index];
+          
+          if(fixDiagonals) {
+            NumericVector delta = as<NumericVector>(findNextCellCPP(gradients(index,_)));
+            double stepLength = computeVectorLengthCPP(delta);
+            a += gradientLengths[index] * stepLength;
+          } else {
+            a += gradientLengths[index];
+          }
+          
           gradFieldVector[index] = a;
         }
       }

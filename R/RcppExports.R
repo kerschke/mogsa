@@ -29,7 +29,7 @@ convertCellID2IndicesCPP <- function(cellID, dims) {
     .Call(`_mogsa_convertCellID2IndicesCPP`, cellID, dims)
 }
 
-cumulateGradientsCPP <- function(centers, gradients, precVectorLength, precNorm) {
-    .Call(`_mogsa_cumulateGradientsCPP`, centers, gradients, precVectorLength, precNorm)
+cumulateGradientsCPP <- function(centers, gradients, precVectorLength, precNorm, fixDiagonals) {
+    .Call(`_mogsa_cumulateGradientsCPP`, centers, gradients, precVectorLength, precNorm, fixDiagonals)
 }
 

@@ -35,7 +35,7 @@
 #' # Finally, we can visualize the resulting multi-objective "landscape":
 #' ggplotHeatmap(x, hide.legend = TRUE)
 #' @export
-computeCumulatedPathLengths = function(centers, gradients, prec.vector.length = 1e-3, prec.norm = 1e-6, check.data = TRUE) {
+computeCumulatedPathLengths = function(centers, gradients, prec.vector.length = 1e-3, prec.norm = 1e-6, check.data = TRUE, fix.diagonals = FALSE) {
 
   if (check.data) {
     if (is.data.frame(centers)) {
@@ -59,6 +59,6 @@ computeCumulatedPathLengths = function(centers, gradients, prec.vector.length = 
     assertNumber(prec.vector.length, lower = 0, finite = TRUE, null.ok = FALSE)
     assertNumber(prec.norm, lower = 0, finite = TRUE, null.ok = FALSE)
   }
-  cumulated.lengths = cumulateGradientsCPP(centers, gradients, prec.vector.length, prec.norm)
+  cumulated.lengths = cumulateGradientsCPP(centers, gradients, prec.vector.length, prec.norm, fix.diagonals)
   return(data.frame(centers, height = cumulated.lengths))
 }

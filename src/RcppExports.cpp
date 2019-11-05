@@ -91,8 +91,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // cumulateGradientsCPP
-NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm);
-RcppExport SEXP _mogsa_cumulateGradientsCPP(SEXP centersSEXP, SEXP gradientsSEXP, SEXP precVectorLengthSEXP, SEXP precNormSEXP) {
+NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm, bool fixDiagonals);
+RcppExport SEXP _mogsa_cumulateGradientsCPP(SEXP centersSEXP, SEXP gradientsSEXP, SEXP precVectorLengthSEXP, SEXP precNormSEXP, SEXP fixDiagonalsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -100,7 +100,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericMatrix >::type gradients(gradientsSEXP);
     Rcpp::traits::input_parameter< double >::type precVectorLength(precVectorLengthSEXP);
     Rcpp::traits::input_parameter< double >::type precNorm(precNormSEXP);
-    rcpp_result_gen = Rcpp::wrap(cumulateGradientsCPP(centers, gradients, precVectorLength, precNorm));
+    Rcpp::traits::input_parameter< bool >::type fixDiagonals(fixDiagonalsSEXP);
+    rcpp_result_gen = Rcpp::wrap(cumulateGradientsCPP(centers, gradients, precVectorLength, precNorm, fixDiagonals));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -113,7 +114,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mogsa_findNextCellCPP", (DL_FUNC) &_mogsa_findNextCellCPP, 1},
     {"_mogsa_convertIndices2CellIDCPP", (DL_FUNC) &_mogsa_convertIndices2CellIDCPP, 2},
     {"_mogsa_convertCellID2IndicesCPP", (DL_FUNC) &_mogsa_convertCellID2IndicesCPP, 2},
-    {"_mogsa_cumulateGradientsCPP", (DL_FUNC) &_mogsa_cumulateGradientsCPP, 4},
+    {"_mogsa_cumulateGradientsCPP", (DL_FUNC) &_mogsa_cumulateGradientsCPP, 5},
     {NULL, NULL, 0}
 };
 
