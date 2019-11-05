@@ -34,10 +34,8 @@
 #' points = expand.grid(x1 = seq(0, 1, 0.01), x2 = seq(0, 1, 0.05))
 #' gradient.field = computeGradientField(points, fn1, fn2)
 #' @export
-computeGradientField = function(points, fn,
-  scale.step = 0.5, prec.grad = 1e-6, prec.norm = 1e-6,
-  prec.angle = 1e-4, parallelize = FALSE) {
-  
+computeGradientField = function(points, fn, prec.grad = 1e-6,
+                                prec.norm = 1e-6, prec.angle = 1e-4, parallelize = FALSE) {
   if (parallelize) {
     r = parallel::mclapply(seq_row(points), function(i) {
       ind = as.numeric(points[i,])
@@ -51,6 +49,79 @@ computeGradientField = function(points, fn,
   }
   
   return(as.matrix(do.call(rbind, r)))
+}
+
+#' @export
+computeGradientFieldFast = function(points, fn, prec.norm = 1e-6, prec.angle = 1e-4) {
+  d = ncol(points) # number of input dimensions
+  n = nrow(points) # total number of points
+  # calculate dimensions of given field of points
+  dims = c()
+  for (j in 1:d) {
+    dims = c(dims, length(unique(points[,j])))
+  }
+  
+  # only p=2, d=2
+  fn.array = array(dim = c(dims[1:2], 2))
+  
+  cat("Calculating required function values ...\n")
+  for (i in 1:dims[1]) {
+    for (j in 1:dims[2]) {
+      f.val = fn(points[(i - 1) * dims[1] + j,])
+      fn.array[i,j,1] = f.val[1]
+      fn.array[i,j,2] = f.val[2]
+    }
+  }
+  
+  grad.mat = matrix(nrow = nrow(points), ncol = ncol(points))
+  
+  cat("Estimating gradients ...\n")
+  for (i in 1:dims[1]) {
+    for (j in 1:dims[2]) {
+      # one row per objective, one column per dimension
+      g = matrix(nrow = 2, ncol = d)
+      
+      # Calculate derivative per _DIMENSION_:
+      
+      # one-sided derivative if necessary, two-sided if possible
+      if (j == 1) {
+        g[,1] = (fn.array[i,j+1,] - fn.array[i,j,])
+      } else if (j == dims[2]) {
+        g[,1] = (fn.array[i,j,] - fn.array[i,j-1,])
+      } else {
+        g[,1] = (fn.array[i,j+1,] - fn.array[i,j-1,]) / 2
+      }
+      
+      # one-sided derivative if necessary, two-sided if possible
+      if (i == 1) {
+        g[,2] = (fn.array[i+1,j,] - fn.array[i,j,])
+      } else if (i == dims[1]) {
+        g[,2] = (fn.array[i,j,] - fn.array[i-1,j,])
+      } else {
+        g[,2] = (fn.array[i+1,j,] - fn.array[i-1,j,]) / 2
+      }
+      
+      # extract / normalize derivative per _OBJECTIVE_
+      g1 = normalizeVectorCPP(g[1,], prec.norm)
+      g2 = normalizeVectorCPP(g[2,], prec.norm)
+      angle = computeAngleCPP(vec1 = g1, vec2 = g2, prec = prec.angle)
+      
+      if (all(g1 == 0) || all(g2 == 0)) {
+        # if the gradient of any objective is zero, this has to be a local efficient point
+        g = rep(0L, d)
+      } else if (abs(180 - angle) < prec.angle) {
+        # if the angle between both gradients is (approximately) 180 degree,
+        # this has to be a local efficient point
+        g = rep(0L, d)
+      } else {
+        g = g1 + g2
+      }
+
+      grad.mat[(i - 1) * dims[1] + j,] = -g
+    }
+  }
+  
+  return(grad.mat)
 }
 
 calcMOGradient = function(ind, fn, prec.grad, prec.norm, prec.angle) {
