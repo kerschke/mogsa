@@ -2,7 +2,9 @@
 #' @import BBmisc
 #' @import checkmate
 #' @import ggplot2
+#' @import plotly
 #' @import kableExtra
+#' @import smoof
 #' @importFrom graphics abline arrows contour grid image plot points
 #' @importFrom grDevices axisTicks terrain.colors
 #' @importFrom Rcpp evalCpp
