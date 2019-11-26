@@ -6,46 +6,90 @@ plotly3DLayers = function(x, fn, mode = "decision.space", max.quantile = 0.05, n
   
   max.height = quantile(x$height, max.quantile)
   min.height = min(x$height)
+  step.sizes = getStepSizes(x)
+  
+  n = smoof::getNumberOfObjectives(fn)
+  lower = smoof::getLowerBoxConstraints(fn)
+  upper = smoof::getUpperBoxConstraints(fn)
+  
   x.boundaries = c()
   
-  for (height in seq(min.height, max.height, max.height / no.steps)) {
-    cat("Height", height, "\n")
-    boundary = x[which(x$height <= height),]
-    boundary = boundary[!enclosedPoints(boundary),]
+  df.max = calculateMaxDisplayHeight(x, max.height, include.diagonals = F)
+  
+  for (height in seq(min.height, max.height, (max.height - min.height) / (no.steps - 1))) {
+    boundary = df.max[which(df.max$height <= height & df.max$max.height >= height),]
+    
     boundary$frame = height
     x.boundaries = rbind(x.boundaries, boundary)
   }
   
+  decision.scene = list(
+    aspectmode='cube',
+    xaxis = list(range = c(lower[1],upper[1]), title='x₁'),
+    yaxis = list(range = c(lower[2],upper[2]), title='x₂'),
+    zaxis = list(range = c(lower[3],upper[3]), title='x₃')
+  )
+  
+  if (n == 3) {
+    objective.scene = list(
+      aspectmode='cube',
+      xaxis = list(range = c(min(x$y1),max(x$y1)), title='y₁'),
+      yaxis = list(range = c(min(x$y2),max(x$y2)), title='y₂'),
+      zaxis = list(range = c(min(x$y3),max(x$y3)), title='y₃')
+    )
+  }
+  
   if (mode == "both") {
     x.shared = highlight_key(x.boundaries)
-    p.objective = plotly3DLayersObjectiveSpace(x.shared,fn)
-    p.decision = plotly3DLayersDecisionSpace(x.shared,fn)
+    p.decision = plotly3DLayersDecisionSpace(x.shared, fn, scene="scene")
+    p.objective = plotly3DLayersObjectiveSpace(x.shared, fn, scene="scene2")
+    
+    domain.left = list(
+      x=c(0,0.5),
+      y=c(0,1)
+    )
+    decision.scene$domain = domain.left
+    
+    domain.right = list(
+      x=c(0.5,1),
+      y=c(0,1)
+    )
+    if (n == 3) {
+      objective.scene$domain = domain.right
+    } else {
+      objective.scene = list(domain=domain.right)
+    }
     
     subplot(p.decision, p.objective) %>% layout(
       title = "Decision and Objective Space",
-      scene = list(domain=list(x=c(0,0.5),y=c(0,1)),
-                   aspectmode='cube'),
-      scene2 = list(domain=list(x=c(0.5,1),y=c(0,1)),
-                    aspectmode='cube')
+      scene = decision.scene,
+      scene2 = objective.scene
     ) %>% highlight(
       on="plotly_click",
-      off="plotly_doubleclick",
+      off="plotly_deselect",
       opacityDim = 0.5,
       color = "red"
     ) %>% hide_guides() %>% animation_opts(
       # does not work?
-      frame = 5000,
-      transition = 0
+      frame = 5000
     )
   } else if (mode == "decision.space") {
-    plotly3DLayersDecisionSpace(x.boundaries,fn)
+    plotly3DLayersDecisionSpace(x.boundaries,fn) %>% layout(
+      scene = decision.scene
+    )
   } else if (mode == "objective.space") {
-    plotly3DLayersObjectiveSpace(x.boundaries,fn)
+    if (n == 3) {
+      plotly3DLayersObjectiveSpace(x.boundaries,fn) %>% layout(
+        scene = objective.scene
+      )
+    } else {
+      plotly3DLayersObjectiveSpace(x.boundaries,fn)
+    }
   }
   
 }
 
-plotly3DLayersObjectiveSpace = function(x, fn) {
+plotly3DLayersObjectiveSpace = function(x, fn, scene="scene") {
   p = smoof::getNumberOfObjectives(fn)
   
   if (p == 2) {
@@ -60,11 +104,10 @@ plotly3DLayersObjectiveSpace = function(x, fn) {
       transition = 0
     )
   } else if (p == 3) {
-    # TODO: Add Scene
     plot_ly(data = x,
             x=~y1,y=~y2,z=~y3,
             frame=~frame,
-            scene="scene2",
+            scene=scene,
             ids=~paste(x1,x2,x3)
     ) %>% add_markers(
       color=~log(height+1)
@@ -75,53 +118,84 @@ plotly3DLayersObjectiveSpace = function(x, fn) {
   }
 }
 
-plotly3DLayersDecisionSpace = function(x, fn) {
-  lower = smoof::getLowerBoxConstraints(fn)
-  upper = smoof::getUpperBoxConstraints(fn)
-  
-  scene = list(
-    xaxis = list(range = c(lower[1],upper[1])),
-    yaxis = list(range = c(lower[2],upper[2])),
-    zaxis = list(range = c(lower[3],upper[3]))
-  )
-  
+plotly3DLayersDecisionSpace = function(x, fn, scene="scene") {
   # TODO: adapt color scale
   plot_ly(data = x,
           x=~x1,y=~x2,z=~x3,
-          scene="scene",
+          scene=scene,
           frame = ~frame,
           ids=~paste(x1,x2,x3)
   ) %>% add_markers(
     color=~log(height+1)
-  ) %>% layout(
-    scene = scene
   ) %>% animation_opts(
-    frame = 1000,
-    transition = 0
+    frame = 1000
   )
 }
 
-enclosedPoints = function(df) {
-  # TODO currently rather inefficient
-  
+getStepSizes = function(df) {
   # df: has to include x1,x2,x3
   df.x = signif(df[,c("x1","x2","x3")], 6)
-  unique.df = apply(x.fn[,c("x1","x2","x3")], 2, unique)
+  unique.x = lapply(df.x, unique)
   
   # we need to assume that the steps in each dimension are alway the same
   # e.g. step size in x1 is 0.01, x2 is 0.02 etc.
-  column.deltas = abs(apply(signif(apply(unique.df, 2, diff), 6), 2, min))
+  step.sizes = c()
   
-  column.deltas = column.deltas * 1.5 # 1.5 for stability when comparing later
+  for (i in 1:length(unique.x)) {
+    diff.x = diff(sort(unique.x[[i]]))
+    diff.x = signif(diff.x, 6)
+    step.sizes = c(step.sizes, min(diff.x))
+  }
   
-  apply(df.x, 1, function(x) {
-    sum((df.x$x1 <= x[1] + column.deltas[1]) &
-        (df.x$x1 >= x[1] - column.deltas[1]) &
-        (df.x$x2 <= x[2] + column.deltas[2]) &
-        (df.x$x2 >= x[2] - column.deltas[2]) &
-        (df.x$x3 <= x[3] + column.deltas[3]) &
-        (df.x$x3 >= x[3] - column.deltas[3])
+  return(step.sizes)
+}
+
+enclosedPoints = function(df, step.sizes) {
+  # not used anymore
+  # kept for the scenario that there are issues with the other one
+  
+  column.deltas = step.sizes * 1.5 # 1.5 for stability when comparing later
+  
+  apply(df, 1, function(x) {
+    sum((df$x1 <= x[1] + column.deltas[1]) &
+        (df$x1 >= x[1] - column.deltas[1]) &
+        (df$x2 <= x[2] + column.deltas[2]) &
+        (df$x2 >= x[2] - column.deltas[2]) &
+        (df$x3 <= x[3] + column.deltas[3]) &
+        (df$x3 >= x[3] - column.deltas[3])
     ) == 27
   })
 }
 
+calculateMaxDisplayHeight = function(df, max.height, include.diagonals = T) {
+  # points are "dominated" by their neighbours from some point on
+  # calculate this point here
+  
+  if (include.diagonals) {
+    deltas = expand.grid(list(-1:1,-1:1,-1:1))
+  } else {
+    deltas = as.data.frame(matrix(data = c(0,0,0,1,0,0,0,1,0,0,0,1,-1,0,0,0,-1,0,0,0,-1), ncol = 3, byrow=T))
+  }
+  
+  sorted.df = df[with(df, order(x3,x2,x1)),]
+  dims = apply(sorted.df[,c("x1","x2","x3")], 2, function(x) length(unique(x)))
+  
+  ids = which(sorted.df$height <= max.height)
+  indices = lapply(ids, function(id) convertCellID2IndicesCPP(id, dims))
+  
+  sorted.df$max.height = Inf
+  sorted.df[ids,]$max.height = lapply(indices, function(i) {
+    neighbour.heights = apply(deltas, 1, function(d) {
+      j = i+d
+      if (any(j <= 0) | any(j > dims)) {
+        0
+      } else {
+        id = convertIndices2CellIDCPP(j, dims)
+        sorted.df[id,"height"]
+      }
+    })
+    max(neighbour.heights)
+  })
+  
+  sorted.df[with(sorted.df, order(height, decreasing = T)),]
+}
