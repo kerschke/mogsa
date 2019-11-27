@@ -52,7 +52,10 @@ computeGradientField = function(points, fn, prec.grad = 1e-6,
 }
 
 #' @export
-computeGradientFieldFast = function(points, fn, prec.norm = 1e-6, prec.angle = 1e-4) {
+computeGradientFieldFast = function(points, fn, obj.values = NULL, prec.norm = 1e-6, prec.angle = 1e-4) {
+  # TODO parallelize (lapply, parallell::mclapply?)
+  
+  obj = smoof::getNumberOfObjectives(fn)
   d = ncol(points) # number of input dimensions
   n = nrow(points) # total number of points
   # calculate dimensions of given field of points
@@ -61,88 +64,63 @@ computeGradientFieldFast = function(points, fn, prec.norm = 1e-6, prec.angle = 1
     dims = c(dims, length(unique(points[,j])))
   }
   
-  # only p=2, d=2
-  fn.array = array(dim = c(dims[1:2], 2))
-  
-  cat("Calculating required function values ...\n")
-  for (i in 1:dims[1]) {
-    for (j in 1:dims[2]) {
-      f.val = fn(points[(i - 1) * dims[1] + j,])
-      fn.array[i,j,1] = f.val[1]
-      fn.array[i,j,2] = f.val[2]
-    }
+  if (is.null(obj.values)) {
+    cat("Evaluating grid of objective values ...\n")
+    fn.mat = calculateObjectiveValues(points, fn)
+  } else {
+    fn.mat = obj.values
   }
-  
-  grad.mat = matrix(nrow = nrow(points), ncol = ncol(points))
-  
-  cat("Estimating gradients ...\n")
-  for (i in 1:dims[1]) {
-    for (j in 1:dims[2]) {
-      # one row per objective, one column per dimension
-      g = matrix(nrow = 2, ncol = d)
-      
-      # Calculate derivative per _DIMENSION_:
-      
-      # one-sided derivative if necessary, two-sided if possible
-      if (j == 1) {
-        g[,1] = (fn.array[i,j+1,] - fn.array[i,j,])
-      } else if (j == dims[2]) {
-        g[,1] = (fn.array[i,j,] - fn.array[i,j-1,])
-      } else {
-        g[,1] = (fn.array[i,j+1,] - fn.array[i,j-1,]) / 2
-      }
-      
-      # one-sided derivative if necessary, two-sided if possible
-      if (i == 1) {
-        g[,2] = (fn.array[i+1,j,] - fn.array[i,j,])
-      } else if (i == dims[1]) {
-        g[,2] = (fn.array[i,j,] - fn.array[i-1,j,])
-      } else {
-        g[,2] = (fn.array[i+1,j,] - fn.array[i-1,j,]) / 2
-      }
-      
-      # extract / normalize derivative per _OBJECTIVE_
-      g1 = normalizeVectorCPP(g[1,], prec.norm)
-      g2 = normalizeVectorCPP(g[2,], prec.norm)
-      angle = computeAngleCPP(vec1 = g1, vec2 = g2, prec = prec.angle)
-      
-      if (all(g1 == 0) || all(g2 == 0)) {
-        # if the gradient of any objective is zero, this has to be a local efficient point
-        g = rep(0L, d)
-      } else if (abs(180 - angle) < prec.angle) {
-        # if the angle between both gradients is (approximately) 180 degree,
-        # this has to be a local efficient point
-        g = rep(0L, d)
-      } else {
-        g = g1 + g2
-      }
 
-      grad.mat[(i - 1) * dims[1] + j,] = -g
-    }
+  step.sizes = getStepSizes(points)
+  
+  cat("Estimating single-objective gradients ...\n")
+  grad.mat.1 = -gridBasedGradient(fn.mat[,1], dims, step.sizes)
+  grad.mat.2 = -gridBasedGradient(fn.mat[,2], dims, step.sizes)
+  
+  if (obj == 2) {
+    cat("Estimating multi-objective gradients ...\n")
+    
+    tmp = lapply(1:n, function(i) {
+      getMOGradient(grad.mat.1[i,], grad.mat.2[i,], prec.norm = prec.norm, prec.angle = prec.angle)
+    })
+    
+    mo.grad.mat = do.call(rbind, tmp)
   }
   
-  return(grad.mat)
+  if (obj == 3) {
+    grad.mat.3 = -gridBasedGradient(fn.mat[,3], dims, step.sizes)
+    
+    cat("Estimating multi-objective gradients ...\n")
+    
+    tmp = lapply(1:n, function(i) {
+      getMOGradient(grad.mat.1[i,], grad.mat.2[i,], grad.mat.3[i,], prec.norm = prec.norm, prec.angle = prec.angle)
+    })
+    
+    mo.grad.mat = do.call(rbind, tmp)
+  }
+  
+  return(mo.grad.mat)
 }
 
-calcMOGradient = function(ind, fn, prec.grad, prec.norm, prec.angle) {
+#' @export
+getMOGradient = function(g1, g2, g3=NULL, prec.norm, prec.angle) {
+  len = length(g1)
   
-  len = length(ind)
-  
-  g = -estimateGradientBothDirections(fn = fn, ind = ind, prec.grad = prec.grad, check.data = FALSE)
-  g1 = normalizeVectorCPP(vec = g[1,], prec = prec.norm)
+  g1 = normalizeVectorCPP(vec = g1, prec = prec.norm)
   if (all(g1 == 0)) {
     # if the gradient of fn1 is zero, this has to be a local efficient point
     return(rep(0L, len))
   }
   
-  g2 = normalizeVectorCPP(vec = g[2,], prec = prec.norm)
+  g2 = normalizeVectorCPP(vec = g2, prec = prec.norm)
   if (all(g2 == 0)) {
     # if the gradient of fn2 is zero, this has to be a local efficient point
     return(rep(0L, len))
   }
   
   angle1 = computeAngleCPP(vec1 = g1, vec2 = g2, prec = prec.norm)
-  if (nrow(g) < 3) {
+  
+  if (is.null(g3)) {
     if (abs(180 - angle1) < prec.angle) {
       # if the angle between both gradients is (approximately) 180 degree,
       # this has to be a local efficient point
@@ -151,7 +129,7 @@ calcMOGradient = function(ind, fn, prec.grad, prec.norm, prec.angle) {
       return(g1 + g2)
     }
   } else {
-    g3 = normalizeVectorCPP(vec = g[3,], prec = prec.norm)
+    g3 = normalizeVectorCPP(vec = g3, prec = prec.norm)
     if (all(g3 == 0)) {
       # if the gradient of fn3 is zero, this has to be a local efficient point
       return(rep(0L, len))
@@ -184,6 +162,88 @@ calcMOGradient = function(ind, fn, prec.grad, prec.norm, prec.angle) {
       }
     }
   }
+}
+
+calcMOGradient = function(ind, fn, prec.grad, prec.norm, prec.angle) {
+  len = length(ind)
+  
+  g = -estimateGradientBothDirections(fn = fn, ind = ind, prec.grad = prec.grad, check.data = FALSE)
+  
+  if (nrow(g) < 3) {
+    getMOGradient(g[1,], g[2,], prec.norm = prec.norm, prec.angle = prec.angle)
+  } else {
+    getMOGradient(g[1,], g[2,], g[3,], prec.norm = prec.norm, prec.angle = prec.angle)
+  }
+}
+
+#' @export
+gridBasedGradient = function(fn.vec, dims, step.sizes, prec.norm = 1e-6, prec.angle = 1e-4) {
+  n = length(fn.vec)
+  d = length(dims)
+  scaling = !is.null(step.sizes)
+  
+  tmp = lapply(1:n, function(id) {
+    indices = convertCellID2IndicesCPP(id, dims)
+    
+    # in each dimension:
+    # one-sided derivative if necessary, two-sided if possible
+    res = lapply(1:d, function(dim) {
+      if (indices[dim] == 1) {
+        i.plus = indices
+        i.plus[dim] = i.plus[dim] + 1
+        f.plus = fn.vec[convertIndices2CellIDCPP(i.plus, dims)]
+        
+        f = fn.vec[convertIndices2CellIDCPP(indices, dims)]
+        
+        diff = f.plus - f
+      } else if (indices[dim] == dims[dim]) {
+        i.minus = indices
+        i.minus[dim] = i.minus[dim] - 1
+        f.minus = fn.vec[convertIndices2CellIDCPP(i.minus, dims)]
+        
+        f = fn.vec[convertIndices2CellIDCPP(indices, dims)]
+        
+        diff = f - f.minus
+      } else {
+        i.plus = indices
+        i.plus[dim] = i.plus[dim] + 1
+        f.plus = fn.vec[convertIndices2CellIDCPP(i.plus, dims)]
+        
+        i.minus = indices
+        i.minus[dim] = i.minus[dim] - 1
+        f.minus = fn.vec[convertIndices2CellIDCPP(i.minus, dims)]
+        
+        diff = (f.plus - f.minus) / 2
+      }
+      
+      if (scaling) {
+        diff = diff / step.sizes[dim]
+      }
+    })
+    
+    do.call(cbind, res)
+  })
+  
+  grad.mat = do.call(rbind, tmp)
+  
+  return(grad.mat)
+}
+
+getStepSizes = function(df) {
+  df.x = signif(df, 6)
+  unique.x = lapply(df.x, unique)
+  
+  # we need to assume that the steps in each dimension are alway the same
+  # e.g. step size in x1 is 0.01, x2 is 0.02 etc.
+  step.sizes = c()
+  
+  for (i in 1:length(unique.x)) {
+    diff.x = diff(sort(unique.x[[i]]))
+    diff.x = signif(diff.x, 6)
+    step.sizes = c(step.sizes, min(diff.x))
+  }
+  
+  return(step.sizes)
 }
 
 # computeHighDimensionalGradientField = function(points, fn1, fn2,
