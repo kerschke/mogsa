@@ -33,9 +33,9 @@ plotly3DLayers = function(x, fn, mode = "decision.space", max.quantile = 0.05, n
   if (n == 3) {
     objective.scene = list(
       aspectmode='cube',
-      xaxis = list(range = c(min(x$y1),max(x$y1)), title='y₁'),
-      yaxis = list(range = c(min(x$y2),max(x$y2)), title='y₂'),
-      zaxis = list(range = c(min(x$y3),max(x$y3)), title='y₃')
+      xaxis = list(range = c(min(x.boundaries$y1),max(x.boundaries$y1)), title='y₁'),
+      yaxis = list(range = c(min(x.boundaries$y2),max(x.boundaries$y2)), title='y₂'),
+      zaxis = list(range = c(min(x.boundaries$y3),max(x.boundaries$y3)), title='y₃')
     )
   }
   
