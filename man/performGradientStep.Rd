@@ -4,24 +4,13 @@
 \alias{performGradientStep}
 \title{Perform multi-objective gradient descent step.}
 \usage{
-performGradientStep(ind, fn1, fn2, gradient.list = list(g1 = NULL, g2 =
-  NULL), scale.step = 0.5, prec.grad = 1e-06, prec.norm = 1e-06,
-  prec.angle = 1e-04, lower, upper, check.data = TRUE)
+performGradientStep(ind, fn, gradient.mat, scale.step = 0.5,
+  prec.grad = 1e-06, prec.norm = 1e-06, prec.angle = 1e-04,
+  check.data = TRUE)
 }
 \arguments{
 \item{ind}{[\code{\link{numeric}(d)}]\cr
 d-dimensional individual.}
-
-\item{fn1}{[\code{\link{function}}]\cr
-The first objective used for computing the multi-objective gradient.}
-
-\item{fn2}{[\code{\link{function}}]\cr
-The second objective used for computing the multi-objective gradient.}
-
-\item{gradient.list}{[\code{\link{list}(p)}]\cr
-A list with the single-objective gradients of the p objectives. Per default
-each of the p elements of this list is NULL, implying that the respective
-gradients will be approximated using \code{\link{estimateGradientBothDirections}}.}
 
 \item{scale.step}{[\code{\link{numeric}(1L)}]\cr
 Scaling factor for the step size in the direction of the multi-objective gradient.
@@ -39,16 +28,27 @@ The default is \code{1e-6}.}
 Precision threshold used for comparing whether the angle (in degree) between two
 vectors is zero. The default is \code{1e-4}.}
 
+\item{check.data}{[\code{\link{logical}(1L)}]\cr
+Should sanity checks be performed? The default is \code{TRUE}. Note that the checks
+should only be turned off (e.g., for a slight speed up), if you are sure that you
+provide the input data in the correct format.}
+
+\item{fn1}{[\code{\link{function}}]\cr
+The first objective used for computing the multi-objective gradient.}
+
+\item{fn2}{[\code{\link{function}}]\cr
+The second objective used for computing the multi-objective gradient.}
+
+\item{gradient.list}{[\code{\link{list}(p)}]\cr
+A list with the single-objective gradients of the p objectives. Per default
+each of the p elements of this list is NULL, implying that the respective
+gradients will be approximated using \code{\link{estimateGradientBothDirections}}.}
+
 \item{lower}{[\code{\link{numeric}(d)}]\cr
 Vector of lower bounds.}
 
 \item{upper}{[\code{\link{numeric}(d)}]\cr
 Vector of upper bounds.}
-
-\item{check.data}{[\code{\link{logical}(1L)}]\cr
-Should sanity checks be performed? The default is \code{TRUE}. Note that the checks
-should only be turned off (e.g., for a slight speed up), if you are sure that you
-provide the input data in the correct format.}
 }
 \value{
 [\code{\link{numeric}}(d) | \code{\link{NULL}}]\cr
@@ -57,7 +57,7 @@ provide the input data in the correct format.}
   step in the direction of the multi-objective gradient.
 }
 \description{
-Computes the bi-objective gradient for the two objectives \code{fn1} and \code{fn2}
+Computes the bi-objective gradient for the bi-objective function \code{fn}
   in position \code{ind}. The bi-objective gradient is the combined vector of the
   two single gradients. Note that the step size depends on the length of the combined
   gradient vector and thus automatically decreases when approaching an efficient set.
@@ -70,10 +70,11 @@ ATTENTION: Only turn off the sanity checks (\code{check.data = FALSE}),
 # Define two single-objective test problems:
 fn1 = function(x) sum((x - c(0.2, 1))^2)
 fn2 = function(x) sum(x)
+fn = function(x) return(c(fn1(x), fn2(x)))
 
 # Perform a gradient step:
-performGradientStep(c(0.3, 0.5), fn1, fn2)
+performGradientStep(c(0.3, 0.5), fn)
 
 # Here, we have found the optimum of fn1:
-performGradientStep(c(0.2, 1), fn1, fn2)
+performGradientStep(c(0.2, 1), fn)
 }

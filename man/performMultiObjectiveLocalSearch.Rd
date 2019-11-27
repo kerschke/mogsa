@@ -4,9 +4,9 @@
 \alias{performMultiObjectiveLocalSearch}
 \title{Performs a multi-objective local search.}
 \usage{
-performMultiObjectiveLocalSearch(x1, x2, x3, fn1, fn2, prec.grad = 1e-06,
-  prec.norm = 1e-06, prec.angle = 1e-04, scale.step = 0.5, lower,
-  upper, max.steps = 1000L)
+performMultiObjectiveLocalSearch(x1, x2, x3, fn, prec.grad = 1e-06,
+  prec.norm = 1e-06, prec.angle = 1e-04, scale.step = 0.5,
+  max.steps = 1000L)
 }
 \arguments{
 \item{x1}{[\code{\link{numeric}(d)}]\cr
@@ -19,12 +19,6 @@ the (bi-objective) optimum.}
 \item{x3}{[\code{\link{numeric}(d)}]\cr
 d-dimensional individual located such that the vector from \code{x2} to \code{x3}
 points in the opposite direction of the vector from \code{x1} to \code{x2}.}
-
-\item{fn1}{[\code{\link{function}}]\cr
-The first objective used for computing the multi-objective gradient.}
-
-\item{fn2}{[\code{\link{function}}]\cr
-The second objective used for computing the multi-objective gradient.}
 
 \item{prec.grad}{[\code{\link{numeric}(1L)}]\cr
 Precision value (= step size) used for approximating the gradient. The default is \code{1e-6}.}
@@ -42,14 +36,20 @@ vectors is zero. The default is \code{1e-4}.}
 Scaling factor for the step size in the direction of the multi-objective gradient.
 The default is \code{0.5}.}
 
+\item{max.steps}{[\code{\link{integer}(1L)}]
+Maximum number of local search steps to reach an optimum. The default is \code{1000L}.}
+
+\item{fn1}{[\code{\link{function}}]\cr
+The first objective used for computing the multi-objective gradient.}
+
+\item{fn2}{[\code{\link{function}}]\cr
+The second objective used for computing the multi-objective gradient.}
+
 \item{lower}{[\code{\link{numeric}(d)}]\cr
 Vector of lower bounds.}
 
 \item{upper}{[\code{\link{numeric}(d)}]\cr
 Vector of upper bounds.}
-
-\item{max.steps}{[\code{\link{integer}(1L)}]
-Maximum number of local search steps to reach an optimum. The default is \code{1000L}.}
 }
 \value{
 [\code{\link{list}(5L)}]\cr
@@ -69,6 +69,7 @@ Given three initial points \code{x1}, \code{x2} and \code{x3}, of which is known
 # Define two single-objective test problems:
 fn1 = function(x) sum((x - c(2, 0))^2)
 fn2 = function(x) sum((x - c(0, 1))^2)
+fn = function(x) return(fn1(x), fn2(x))
 
 # Visualize locally efficient set, i.e., the "area" where we ideally want to find a point:
 plot(c(2, 0), c(0, 1), type = "o", pch = 19,
@@ -85,7 +86,7 @@ text(rbind(x1, x2, x3), labels = c("x1", "x2", "x3"), pos = 4)
 
 # Optimize using weighted bisection optimization:
 result = performMultiObjectiveLocalSearch(x1 = x1, x2 = x2, x3 = x3,
-  fn1 = fn1, fn2 = fn2, lower = c(0, 0), upper = c(2, 1))
+  fn = fn, lower = c(0, 0), upper = c(2, 1))
 opt.path = result$opt.path
 
 # Visualize the optimization path:

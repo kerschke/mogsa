@@ -4,26 +4,14 @@
 \alias{findLocallyEfficientPoint}
 \title{Find locally efficient point.}
 \usage{
-findLocallyEfficientPoint(ind, fn1, fn2, gradient.list = list(g1 = NULL,
-  g2 = NULL), max.no.steps.ls = 500L, scale.step = 0.5,
-  prec.grad = 1e-06, prec.norm = 1e-06, prec.angle = 1e-04,
-  ls.method = "both", lower, upper, check.data = TRUE,
+findLocallyEfficientPoint(ind, fn, gradient.mat, max.no.steps.ls = 500L,
+  scale.step = 0.5, prec.grad = 1e-06, prec.norm = 1e-06,
+  prec.angle = 1e-04, ls.method = "both", check.data = TRUE,
   show.info = TRUE, allow.restarts = TRUE)
 }
 \arguments{
 \item{ind}{[\code{\link{numeric}(d)}]\cr
 d-dimensional individual.}
-
-\item{fn1}{[\code{\link{function}}]\cr
-The first objective used for computing the multi-objective gradient.}
-
-\item{fn2}{[\code{\link{function}}]\cr
-The second objective used for computing the multi-objective gradient.}
-
-\item{gradient.list}{[\code{\link{list}(p)}]\cr
-A list with the single-objective gradients of the p objectives. Per default
-each of the p elements of this list is NULL, implying that the respective
-gradients will be approximated using \code{\link{estimateGradientBothDirections}}.}
 
 \item{max.no.steps.ls}{[\code{\link{integer}(1L)}]\cr
 Maximum number of steps performed to find a locally efficient point.
@@ -50,12 +38,6 @@ Select between two possible local search methods: weighted bisection
 (\code{"bisection"}), multi-objective local search (\code{"mo-ls"})
 or \code{"both"} (sequentially). The default is \code{"both"}.}
 
-\item{lower}{[\code{\link{numeric}(d)}]\cr
-Vector of lower bounds.}
-
-\item{upper}{[\code{\link{numeric}(d)}]\cr
-Vector of upper bounds.}
-
 \item{check.data}{[\code{\link{logical}(1L)}]\cr
 Should sanity checks be performed? The default is \code{TRUE}. Note that the checks
 should only be turned off (e.g., for a slight speed up), if you are sure that you
@@ -68,6 +50,23 @@ The default is \code{TRUE}.}
 \item{allow.restarts}{[\code{\link{logical}(1L)}]\cr
 Should the algorithm be allowed to perform restarts?
 The default is \code{TRUE}.}
+
+\item{fn1}{[\code{\link{function}}]\cr
+The first objective used for computing the multi-objective gradient.}
+
+\item{fn2}{[\code{\link{function}}]\cr
+The second objective used for computing the multi-objective gradient.}
+
+\item{gradient.list}{[\code{\link{list}(p)}]\cr
+A list with the single-objective gradients of the p objectives. Per default
+each of the p elements of this list is NULL, implying that the respective
+gradients will be approximated using \code{\link{estimateGradientBothDirections}}.}
+
+\item{lower}{[\code{\link{numeric}(d)}]\cr
+Vector of lower bounds.}
+
+\item{upper}{[\code{\link{numeric}(d)}]\cr
+Vector of upper bounds.}
 }
 \value{
 [\code{\link{list}(3L)}]\cr
@@ -104,6 +103,7 @@ ATTENTION: Only turn off the sanity checks (\code{check.data = FALSE}),
 # Define two single-objective test problems:
 fn1 = function(x) sum((x - c(2, 0))^2)
 fn2 = function(x) sum((x - c(0, 1))^2)
+fn = function(x) return(c(fn1(x), fn2(x)))
 
 # Visualize locally efficient set, i.e., the "area" where we ideally want to find a point:
 plot(c(2, 0), c(0, 1), type = "o", pch = 19,
@@ -117,10 +117,10 @@ points(rbind(x.start), pch = 19, type = "o", lty = "dotted")
 text(rbind(x.start), labels = c("start"), pos = 2)
 
 # Visualize path of bisection search in blue
-res.bisection = findLocallyEfficientPoint(c(0.3, 0.5), fn1, fn2, ls.method = "bisection")
+res.bisection = findLocallyEfficientPoint(c(0.3, 0.5), fn, ls.method = "bisection")
 points(res.bisection$opt.path, pch = 20, lty = 2, type = "o", col = "blue")
 
 # Visualize path of multi-objective local search in red
-res.mo.ls = findLocallyEfficientPoint(c(0.3, 0.5), fn1, fn2, ls.method = "mo-ls")
+res.mo.ls = findLocallyEfficientPoint(c(0.3, 0.5), fn, ls.method = "mo-ls")
 points(res.mo.ls$opt.path, pch = 20, lty = 2, type = "o", col = "red")
 }

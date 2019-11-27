@@ -5,7 +5,8 @@
 \title{Compute the Cumulated Path Lengths.}
 \usage{
 computeCumulatedPathLengths(centers, gradients,
-  prec.vector.length = 0.001, prec.norm = 1e-06, check.data = TRUE)
+  prec.vector.length = 0.001, prec.norm = 1e-06, check.data = TRUE,
+  fix.diagonals = FALSE)
 }
 \arguments{
 \item{centers}{[\code{\link{matrix}}]\cr

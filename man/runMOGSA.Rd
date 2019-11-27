@@ -4,12 +4,11 @@
 \alias{runMOGSA}
 \title{Run MOGSA.}
 \usage{
-runMOGSA(ind, fn = NULL, fn1 = NULL, fn2 = NULL,
-  max.no.basins = 15L, max.no.steps.ls = 600L,
+runMOGSA(ind, fn = NULL, max.no.basins = 15L, max.no.steps.ls = 600L,
   max.no.steps.exploration = 100L, scale.step = 0.5,
   exploration.step = 0.2, prec.grad = 1e-06, prec.norm = 1e-06,
-  prec.angle = 1e-04, ls.method = "both", lower, upper,
-  check.data = TRUE, show.info = TRUE, allow.restarts = TRUE)
+  prec.angle = 1e-04, ls.method = "both", check.data = TRUE,
+  show.info = TRUE, allow.restarts = TRUE)
 }
 \arguments{
 \item{ind}{[\code{\link{numeric}(d)}]\cr
@@ -19,12 +18,6 @@ d-dimensional individual.}
 Bi-objective problem to be optimized. Note that this function
 will only be considered, if its single objectives (\code{fn1} and/or
 \code{fn2}) are not provided.}
-
-\item{fn1}{[\code{\link{function}}]\cr
-The first objective used for computing the multi-objective gradient.}
-
-\item{fn2}{[\code{\link{function}}]\cr
-The second objective used for computing the multi-objective gradient.}
 
 \item{max.no.basins}{[\code{\link{integer}(1L)}]\cr
 Maximum number of basins allowed to visit on the way to the optimum.
@@ -64,12 +57,6 @@ Select between two possible local search methods: weighted bisection
 (\code{"bisection"}), multi-objective local search (\code{"mo-ls"})
 or \code{"both"} (sequentially). The default is \code{"both"}.}
 
-\item{lower}{[\code{\link{numeric}(d)}]\cr
-Vector of lower bounds.}
-
-\item{upper}{[\code{\link{numeric}(d)}]\cr
-Vector of upper bounds.}
-
 \item{check.data}{[\code{\link{logical}(1L)}]\cr
 Should sanity checks be performed? The default is \code{TRUE}. Note that the checks
 should only be turned off (e.g., for a slight speed up), if you are sure that you
@@ -82,6 +69,18 @@ The default is \code{TRUE}.}
 \item{allow.restarts}{[\code{\link{logical}(1L)}]\cr
 Should the algorithm be allowed to perform restarts?
 The default is \code{TRUE}.}
+
+\item{fn1}{[\code{\link{function}}]\cr
+The first objective used for computing the multi-objective gradient.}
+
+\item{fn2}{[\code{\link{function}}]\cr
+The second objective used for computing the multi-objective gradient.}
+
+\item{lower}{[\code{\link{numeric}(d)}]\cr
+Vector of lower bounds.}
+
+\item{upper}{[\code{\link{numeric}(d)}]\cr
+Vector of upper bounds.}
 }
 \value{
 [\code{\link{matrix}}]\cr

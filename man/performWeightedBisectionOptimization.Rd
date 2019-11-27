@@ -4,9 +4,9 @@
 \alias{performWeightedBisectionOptimization}
 \title{Performs a weighted bi-section optimization.}
 \usage{
-performWeightedBisectionOptimization(x1, x2, fn1, fn2, g1 = NULL,
-  g2 = NULL, prec.grad = 1e-06, prec.norm = 1e-06,
-  max.steps = 1000L, lower, upper)
+performWeightedBisectionOptimization(x1, x2, fn, g1 = NULL, g2 = NULL,
+  prec.grad = 1e-06, prec.norm = 1e-06, max.steps = 1000L, lower,
+  upper)
 }
 \arguments{
 \item{x1}{[\code{\link{numeric}(d)}]\cr
@@ -14,12 +14,6 @@ d-dimensional individual located on one side of the (bi-objective) optimum.}
 
 \item{x2}{[\code{\link{numeric}(d)}]\cr
 d-dimensional individual located on the opposite side (w.r.t. x1) of the (bi-objective) optimum.}
-
-\item{fn1}{[\code{\link{function}}]\cr
-The first objective used for computing the multi-objective gradient.}
-
-\item{fn2}{[\code{\link{function}}]\cr
-The second objective used for computing the multi-objective gradient.}
 
 \item{g1}{[\code{\link{function}}]\cr
 The gradient of the first objective in \code{ind}. If missing, it will
@@ -45,6 +39,12 @@ Vector of lower bounds.}
 
 \item{upper}{[\code{\link{numeric}(d)}]\cr
 Vector of upper bounds.}
+
+\item{fn1}{[\code{\link{function}}]\cr
+The first objective used for computing the multi-objective gradient.}
+
+\item{fn2}{[\code{\link{function}}]\cr
+The second objective used for computing the multi-objective gradient.}
 }
 \value{
 [\code{\link{list}(4L)}]\cr
@@ -65,6 +65,7 @@ Weighted version of the bisection optimization method. Given two points \code{x1
 # Define two single-objective test problems:
 fn1 = function(x) sum((x - c(2, 0))^2)
 fn2 = function(x) sum((x - c(0, 1))^2)
+fn = function(x) return(c(fn1(x), fn2(x)))
 
 # Visualize locally efficient set, i.e., the "area" where we ideally want to find a point:
 plot(c(2, 0), c(0, 1), type = "o", pch = 19,
@@ -79,7 +80,7 @@ points(rbind(x1, x2), pch = 19, type = "o", lty = "dotted")
 text(rbind(x1, x2), labels = c("x1", "x2"), pos = 4)
 
 # Optimize using weighted bisection optimization:
-opt.path = performWeightedBisectionOptimization(x1 = x1, x2 = x2, fn1 = fn1, fn2 = fn2)$opt.path
+opt.path = performWeightedBisectionOptimization(x1 = x1, x2 = x2, fn = fn)$opt.path
 
 # Visualize the optimization path:
 points(opt.path)

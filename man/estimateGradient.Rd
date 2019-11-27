@@ -7,10 +7,10 @@
 \title{Approximate gradient of a single-objective function.}
 \usage{
 estimateGradientSingleDirection(fn, ind, side = NULL,
-  prec.grad = 1e-06, check.data = TRUE, lower, upper, ...)
+  prec.grad = 1e-06, check.data = TRUE, ...)
 
 estimateGradientBothDirections(fn, ind, prec.grad = 1e-04,
-  check.data = TRUE, lower, upper, ...)
+  check.data = TRUE, ...)
 }
 \arguments{
 \item{fn}{[\code{\link{function}}]\cr
@@ -32,13 +32,13 @@ Should sanity checks be performed? The default is \code{TRUE}. Note that the che
 should only be turned off (e.g., for a slight speed up), if you are sure that you
 provide the input data in the correct format.}
 
+\item{...}{Further arguments to be passed to \code{fn}.}
+
 \item{lower}{[\code{\link{numeric}(d)}]\cr
 Vector of lower bounds.}
 
 \item{upper}{[\code{\link{numeric}(d)}]\cr
 Vector of upper bounds.}
-
-\item{...}{Further arguments to be passed to \code{fn}.}
 }
 \value{
 [\code{\link{numeric}(d)}]

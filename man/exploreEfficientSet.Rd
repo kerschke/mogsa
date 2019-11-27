@@ -4,25 +4,14 @@
 \alias{exploreEfficientSet}
 \title{Explore locally efficient set.}
 \usage{
-exploreEfficientSet(ind, fn1, fn2, gradient.list = list(g1 = NULL, g2 =
-  NULL), max.no.steps.exploration = 400L, exploration.step = 0.2,
-  prec.grad = 1e-06, prec.norm = 1e-06, prec.angle = 1e-04, lower,
-  upper, check.data = TRUE, show.info = TRUE)
+exploreEfficientSet(ind, fn, gradient.mat,
+  max.no.steps.exploration = 400L, exploration.step = 0.2,
+  prec.grad = 1e-06, prec.norm = 1e-06, prec.angle = 1e-04,
+  check.data = TRUE, show.info = TRUE)
 }
 \arguments{
 \item{ind}{[\code{\link{numeric}(d)}]\cr
 d-dimensional individual.}
-
-\item{fn1}{[\code{\link{function}}]\cr
-The first objective used for computing the multi-objective gradient.}
-
-\item{fn2}{[\code{\link{function}}]\cr
-The second objective used for computing the multi-objective gradient.}
-
-\item{gradient.list}{[\code{\link{list}(p)}]\cr
-A list with the single-objective gradients of the p objectives. Per default
-each of the p elements of this list is NULL, implying that the respective
-gradients will be approximated using \code{\link{estimateGradientBothDirections}}.}
 
 \item{max.no.steps.exploration}{[\code{\link{integer}(1L)}]\cr
 Maximum number of steps performed (per objective) when exploring the local efficient set.
@@ -45,12 +34,6 @@ The default is \code{1e-6}.}
 Precision threshold used for comparing whether the angle (in degree) between two
 vectors is zero. The default is \code{1e-4}.}
 
-\item{lower}{[\code{\link{numeric}(d)}]\cr
-Vector of lower bounds.}
-
-\item{upper}{[\code{\link{numeric}(d)}]\cr
-Vector of upper bounds.}
-
 \item{check.data}{[\code{\link{logical}(1L)}]\cr
 Should sanity checks be performed? The default is \code{TRUE}. Note that the checks
 should only be turned off (e.g., for a slight speed up), if you are sure that you
@@ -59,6 +42,23 @@ provide the input data in the correct format.}
 \item{show.info}{[\code{\link{logical}(1L)}]\cr
 Should the called method provide further information on the console?
 The default is \code{TRUE}.}
+
+\item{fn1}{[\code{\link{function}}]\cr
+The first objective used for computing the multi-objective gradient.}
+
+\item{fn2}{[\code{\link{function}}]\cr
+The second objective used for computing the multi-objective gradient.}
+
+\item{gradient.list}{[\code{\link{list}(p)}]\cr
+A list with the single-objective gradients of the p objectives. Per default
+each of the p elements of this list is NULL, implying that the respective
+gradients will be approximated using \code{\link{estimateGradientBothDirections}}.}
+
+\item{lower}{[\code{\link{numeric}(d)}]\cr
+Vector of lower bounds.}
+
+\item{upper}{[\code{\link{numeric}(d)}]\cr
+Vector of upper bounds.}
 }
 \value{
 [\code{\link{list}(4)}]\cr
