@@ -132,41 +132,6 @@ plotly3DLayersDecisionSpace = function(x, fn, scene="scene") {
   )
 }
 
-getStepSizes = function(df) {
-  # df: has to include x1,x2,x3
-  df.x = signif(df[,c("x1","x2","x3")], 6)
-  unique.x = lapply(df.x, unique)
-  
-  # we need to assume that the steps in each dimension are alway the same
-  # e.g. step size in x1 is 0.01, x2 is 0.02 etc.
-  step.sizes = c()
-  
-  for (i in 1:length(unique.x)) {
-    diff.x = diff(sort(unique.x[[i]]))
-    diff.x = signif(diff.x, 6)
-    step.sizes = c(step.sizes, min(diff.x))
-  }
-  
-  return(step.sizes)
-}
-
-enclosedPoints = function(df, step.sizes) {
-  # not used anymore
-  # kept for the scenario that there are issues with the other one
-  
-  column.deltas = step.sizes * 1.5 # 1.5 for stability when comparing later
-  
-  apply(df, 1, function(x) {
-    sum((df$x1 <= x[1] + column.deltas[1]) &
-        (df$x1 >= x[1] - column.deltas[1]) &
-        (df$x2 <= x[2] + column.deltas[2]) &
-        (df$x2 >= x[2] - column.deltas[2]) &
-        (df$x3 <= x[3] + column.deltas[3]) &
-        (df$x3 >= x[3] - column.deltas[3])
-    ) == 27
-  })
-}
-
 calculateMaxDisplayHeight = function(df, max.height, include.diagonals = T) {
   # points are "dominated" by their neighbours from some point on
   # calculate this point here
