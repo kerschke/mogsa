@@ -52,9 +52,7 @@ computeGradientField = function(points, fn, prec.grad = 1e-6,
 }
 
 #' @export
-computeGradientFieldFast = function(points, fn, obj.values = NULL, prec.norm = 1e-6, prec.angle = 1e-4) {
-  # TODO parallelize (lapply, parallell::mclapply?)
-  
+computeGradientFieldGrid = function(points, fn, obj.values = NULL, prec.norm = 1e-6, prec.angle = 1e-4) {
   obj = smoof::getNumberOfObjectives(fn)
   d = ncol(points) # number of input dimensions
   n = nrow(points) # total number of points

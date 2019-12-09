@@ -472,8 +472,6 @@ NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradient
   // helper variables
   double vectorLength = -1.0;
   NumericVector currentGradients;
-  NumericVector nextGradient;
-  double angle;
   int visitCounter = 0;                     // counter, enabling early stop of algorithm once all cells are processed
   IntegerVector currentCell(d);             // row and column index of the current cell
   IntegerVector nextCell(d);                // row and column index of the next (= successor) cell
