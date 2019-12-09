@@ -5,6 +5,10 @@ assureBoundsCPP <- function(ind, g, lower, upper) {
     .Call(`_mogsa_assureBoundsCPP`, ind, g, lower, upper)
 }
 
+crossProductCPP <- function(ab, ac) {
+    .Call(`_mogsa_crossProductCPP`, ab, ac)
+}
+
 computeVectorLengthCPP <- function(vec) {
     .Call(`_mogsa_computeVectorLengthCPP`, vec)
 }
@@ -29,7 +33,27 @@ convertCellID2IndicesCPP <- function(cellID, dims) {
     .Call(`_mogsa_convertCellID2IndicesCPP`, cellID, dims)
 }
 
+gridBasedGradientCPP <- function(fnVec, dims, stepSizes, precNorm, precAngle) {
+    .Call(`_mogsa_gridBasedGradientCPP`, fnVec, dims, stepSizes, precNorm, precAngle)
+}
+
 cumulateGradientsCPP <- function(centers, gradients, precVectorLength, precNorm, fixDiagonals) {
     .Call(`_mogsa_cumulateGradientsCPP`, centers, gradients, precVectorLength, precNorm, fixDiagonals)
+}
+
+getBiObjGradientCPP <- function(g1, g2, precNorm, precAngle) {
+    .Call(`_mogsa_getBiObjGradientCPP`, g1, g2, precNorm, precAngle)
+}
+
+getTriObjGradientCPP <- function(g1, g2, g3, precNorm, precAngle) {
+    .Call(`_mogsa_getTriObjGradientCPP`, g1, g2, g3, precNorm, precAngle)
+}
+
+getBiObjGradientGridCPP <- function(gradMat1, gradMat2, precNorm, precAngle) {
+    .Call(`_mogsa_getBiObjGradientGridCPP`, gradMat1, gradMat2, precNorm, precAngle)
+}
+
+getTriObjGradientGridCPP <- function(gradMat1, gradMat2, gradMat3, precNorm, precAngle) {
+    .Call(`_mogsa_getTriObjGradientGridCPP`, gradMat1, gradMat2, gradMat3, precNorm, precAngle)
 }
 

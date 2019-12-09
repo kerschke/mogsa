@@ -19,6 +19,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// crossProductCPP
+NumericVector crossProductCPP(NumericVector ab, NumericVector ac);
+RcppExport SEXP _mogsa_crossProductCPP(SEXP abSEXP, SEXP acSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type ab(abSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type ac(acSEXP);
+    rcpp_result_gen = Rcpp::wrap(crossProductCPP(ab, ac));
+    return rcpp_result_gen;
+END_RCPP
+}
 // computeVectorLengthCPP
 double computeVectorLengthCPP(NumericVector vec);
 RcppExport SEXP _mogsa_computeVectorLengthCPP(SEXP vecSEXP) {
@@ -90,6 +102,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// gridBasedGradientCPP
+NumericMatrix gridBasedGradientCPP(NumericVector fnVec, IntegerVector dims, NumericVector stepSizes, double precNorm, double precAngle);
+RcppExport SEXP _mogsa_gridBasedGradientCPP(SEXP fnVecSEXP, SEXP dimsSEXP, SEXP stepSizesSEXP, SEXP precNormSEXP, SEXP precAngleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type fnVec(fnVecSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type stepSizes(stepSizesSEXP);
+    Rcpp::traits::input_parameter< double >::type precNorm(precNormSEXP);
+    Rcpp::traits::input_parameter< double >::type precAngle(precAngleSEXP);
+    rcpp_result_gen = Rcpp::wrap(gridBasedGradientCPP(fnVec, dims, stepSizes, precNorm, precAngle));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cumulateGradientsCPP
 NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm, bool fixDiagonals);
 RcppExport SEXP _mogsa_cumulateGradientsCPP(SEXP centersSEXP, SEXP gradientsSEXP, SEXP precVectorLengthSEXP, SEXP precNormSEXP, SEXP fixDiagonalsSEXP) {
@@ -105,16 +132,80 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// getBiObjGradientCPP
+NumericVector getBiObjGradientCPP(NumericVector g1, NumericVector g2, double precNorm, double precAngle);
+RcppExport SEXP _mogsa_getBiObjGradientCPP(SEXP g1SEXP, SEXP g2SEXP, SEXP precNormSEXP, SEXP precAngleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type g1(g1SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type g2(g2SEXP);
+    Rcpp::traits::input_parameter< double >::type precNorm(precNormSEXP);
+    Rcpp::traits::input_parameter< double >::type precAngle(precAngleSEXP);
+    rcpp_result_gen = Rcpp::wrap(getBiObjGradientCPP(g1, g2, precNorm, precAngle));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getTriObjGradientCPP
+NumericVector getTriObjGradientCPP(NumericVector g1, NumericVector g2, NumericVector g3, double precNorm, double precAngle);
+RcppExport SEXP _mogsa_getTriObjGradientCPP(SEXP g1SEXP, SEXP g2SEXP, SEXP g3SEXP, SEXP precNormSEXP, SEXP precAngleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type g1(g1SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type g2(g2SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type g3(g3SEXP);
+    Rcpp::traits::input_parameter< double >::type precNorm(precNormSEXP);
+    Rcpp::traits::input_parameter< double >::type precAngle(precAngleSEXP);
+    rcpp_result_gen = Rcpp::wrap(getTriObjGradientCPP(g1, g2, g3, precNorm, precAngle));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getBiObjGradientGridCPP
+NumericMatrix getBiObjGradientGridCPP(NumericMatrix gradMat1, NumericMatrix gradMat2, double precNorm, double precAngle);
+RcppExport SEXP _mogsa_getBiObjGradientGridCPP(SEXP gradMat1SEXP, SEXP gradMat2SEXP, SEXP precNormSEXP, SEXP precAngleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type gradMat1(gradMat1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type gradMat2(gradMat2SEXP);
+    Rcpp::traits::input_parameter< double >::type precNorm(precNormSEXP);
+    Rcpp::traits::input_parameter< double >::type precAngle(precAngleSEXP);
+    rcpp_result_gen = Rcpp::wrap(getBiObjGradientGridCPP(gradMat1, gradMat2, precNorm, precAngle));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getTriObjGradientGridCPP
+NumericMatrix getTriObjGradientGridCPP(NumericMatrix gradMat1, NumericMatrix gradMat2, NumericMatrix gradMat3, double precNorm, double precAngle);
+RcppExport SEXP _mogsa_getTriObjGradientGridCPP(SEXP gradMat1SEXP, SEXP gradMat2SEXP, SEXP gradMat3SEXP, SEXP precNormSEXP, SEXP precAngleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type gradMat1(gradMat1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type gradMat2(gradMat2SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type gradMat3(gradMat3SEXP);
+    Rcpp::traits::input_parameter< double >::type precNorm(precNormSEXP);
+    Rcpp::traits::input_parameter< double >::type precAngle(precAngleSEXP);
+    rcpp_result_gen = Rcpp::wrap(getTriObjGradientGridCPP(gradMat1, gradMat2, gradMat3, precNorm, precAngle));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mogsa_assureBoundsCPP", (DL_FUNC) &_mogsa_assureBoundsCPP, 4},
+    {"_mogsa_crossProductCPP", (DL_FUNC) &_mogsa_crossProductCPP, 2},
     {"_mogsa_computeVectorLengthCPP", (DL_FUNC) &_mogsa_computeVectorLengthCPP, 1},
     {"_mogsa_normalizeVectorCPP", (DL_FUNC) &_mogsa_normalizeVectorCPP, 2},
     {"_mogsa_computeAngleCPP", (DL_FUNC) &_mogsa_computeAngleCPP, 3},
     {"_mogsa_findNextCellCPP", (DL_FUNC) &_mogsa_findNextCellCPP, 1},
     {"_mogsa_convertIndices2CellIDCPP", (DL_FUNC) &_mogsa_convertIndices2CellIDCPP, 2},
     {"_mogsa_convertCellID2IndicesCPP", (DL_FUNC) &_mogsa_convertCellID2IndicesCPP, 2},
+    {"_mogsa_gridBasedGradientCPP", (DL_FUNC) &_mogsa_gridBasedGradientCPP, 5},
     {"_mogsa_cumulateGradientsCPP", (DL_FUNC) &_mogsa_cumulateGradientsCPP, 5},
+    {"_mogsa_getBiObjGradientCPP", (DL_FUNC) &_mogsa_getBiObjGradientCPP, 4},
+    {"_mogsa_getTriObjGradientCPP", (DL_FUNC) &_mogsa_getTriObjGradientCPP, 5},
+    {"_mogsa_getBiObjGradientGridCPP", (DL_FUNC) &_mogsa_getBiObjGradientGridCPP, 4},
+    {"_mogsa_getTriObjGradientGridCPP", (DL_FUNC) &_mogsa_getTriObjGradientGridCPP, 5},
     {NULL, NULL, 0}
 };
 

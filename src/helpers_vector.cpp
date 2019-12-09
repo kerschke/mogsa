@@ -60,6 +60,13 @@ NumericVector assureBoundsCPP(NumericVector ind, NumericVector g, NumericVector 
   return child ;
 }
 
+// [[Rcpp::export]]
+NumericVector crossProductCPP(NumericVector ab, NumericVector ac) {
+  double abci = ab(1) * ac(2) - ac(1) * ab(2);
+  double abcj = ac(0) * ab(2) - ab(0) * ac(2);
+  double abck = ab(0) * ac(1) - ac(0) * ab(1);
+  return NumericVector::create(abci,abcj,abck);
+}
 
 // [[Rcpp::export]]
 double computeVectorLengthCPP(NumericVector vec) {
@@ -380,6 +387,65 @@ IntegerVector convertCellID2IndicesCPP(int cellID, IntegerVector dims) {
 //   return gradFieldVector;
 // }
 
+// [[Rcpp::export]]
+NumericMatrix gridBasedGradientCPP(NumericVector fnVec, IntegerVector dims, NumericVector stepSizes, double precNorm, double precAngle) {
+  int n = fnVec.size();
+  int d = dims.size();
+  bool scaling = (stepSizes != nullptr);
+  NumericMatrix gradMat(n, d);
+  
+  // helper variables
+  double diff;
+  IntegerVector indices;
+  IntegerVector iPlus;
+  IntegerVector iMinus;
+  double f;
+  double fPlus;
+  double fMinus;
+  
+  for (int id = 1; id <= n; id++) {
+    indices = convertCellID2IndicesCPP(id, dims);
+    
+    for (int dim = 0; dim < d; dim++) {
+      // vector access is zero-indexed!
+      if (indices(dim) == 1) {
+        iPlus = clone(indices);
+        iPlus(dim)++;
+        
+        fPlus = fnVec[convertIndices2CellIDCPP(iPlus, dims) - 1];
+        f = fnVec[convertIndices2CellIDCPP(indices, dims) - 1];
+        
+        diff = fPlus - f;
+      } else if (indices(dim) == dims(dim)) {
+        iMinus = clone(indices);
+        iMinus(dim)--;
+        
+        fMinus = fnVec[convertIndices2CellIDCPP(iMinus, dims) - 1];
+        f = fnVec[convertIndices2CellIDCPP(indices, dims) - 1];
+        
+        diff = f - fMinus;
+      } else {
+        iPlus = clone(indices);
+        iPlus(dim)++;
+        iMinus = clone(indices);
+        iMinus(dim)--;
+        
+        fPlus = fnVec[convertIndices2CellIDCPP(iPlus, dims) - 1];
+        fMinus = fnVec[convertIndices2CellIDCPP(iMinus, dims) - 1];
+        
+        diff = (fPlus - fMinus) / 2;
+      }
+      
+      if (scaling) {
+        diff = diff / stepSizes(dim);
+      }
+      
+      gradMat(id-1, dim) = diff;
+    }
+  }
+  
+  return gradMat;
+}
 
 
 // [[Rcpp::export]]
@@ -406,6 +472,8 @@ NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradient
   // helper variables
   double vectorLength = -1.0;
   NumericVector currentGradients;
+  NumericVector nextGradient;
+  double angle;
   int visitCounter = 0;                     // counter, enabling early stop of algorithm once all cells are processed
   IntegerVector currentCell(d);             // row and column index of the current cell
   IntegerVector nextCell(d);                // row and column index of the next (= successor) cell
@@ -510,3 +578,139 @@ NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradient
 
   return gradFieldVector;
 }
+
+// Multiobjective gradient for two objectives
+// [[Rcpp::export]]
+NumericVector getBiObjGradientCPP(NumericVector g1, NumericVector g2, double precNorm, double precAngle) {
+  int len = g1.length();
+  NumericVector zeros (len);
+  zeros.attr("dim") = R_NilValue;
+  
+  g1 = normalizeVectorCPP(g1, precNorm);
+  if (is_true(all(g1 == 0))) {
+    // if the gradient of fn1 is zero, this has to be a local efficient point
+    return(zeros);
+  }
+  
+  g2 = normalizeVectorCPP(g2, precNorm);
+  if (is_true(all(g2 == 0))) {
+    // if the gradient of fn2 is zero, this has to be a local efficient point
+    return(zeros);
+  }
+  
+  double angle1 = computeAngleCPP(g1, g2, precNorm);
+  
+  if (abs(180 - angle1) < precAngle) {
+    // if the angle between both gradients is (approximately) 180 degree,
+    // this has to be a local efficient point
+    return(zeros);
+  }
+  
+  return(0.5 * (g1 + g2));
+}
+
+// Multiobjective gradient for three objectives
+// [[Rcpp::export]]
+NumericVector getTriObjGradientCPP(NumericVector g1, NumericVector g2, NumericVector g3, double precNorm, double precAngle) {
+  int len = g1.length();
+  NumericVector zeros (len);
+
+  g1 = normalizeVectorCPP(g1, precNorm);
+  g2 = normalizeVectorCPP(g2, precNorm);
+  g3 = normalizeVectorCPP(g3, precNorm);
+  
+  if (is_true(all(g1 == 0)) ||
+      is_true(all(g2 == 0)) ||
+      is_true(all(g3 == 0))) {
+    // if the gradient of any objective is zero, this has to be a local efficient point
+    return(zeros);
+  }
+  
+  double angle1 = computeAngleCPP(g1, g2, precNorm);
+  double angle2 = computeAngleCPP(g1, g3, precNorm);
+  double angle3 = computeAngleCPP(g2, g3, precNorm);
+  
+  if (abs(180 - angle1) < precAngle ||
+      abs(180 - angle2) < precAngle ||
+      abs(180 - angle3) < precAngle) {
+    // if the angle between any two gradients is (approximately) 180 degree,
+    // this has to be a local efficient point
+    return(zeros);
+  }
+  
+  if (abs(angle1 + angle2 + angle3 - 360) < precAngle) {
+    // if all gradients show in "opposite" directions, this has to be a local effient point
+    return(zeros);
+  }
+  
+  if (len >= 3) {
+    NumericVector n = normalizeVectorCPP(crossProductCPP(g1-g2,g1-g3), 0);
+    NumericVector moNorm = n * sum(n * g1); // n * (n dot g1) = n * (distance to plane created by g1,g2,g3)
+    
+    // useful?
+    // if (is_true(all(abs(moNorm) < precNorm))) {
+    //   // if the norm gradient is zero, this has to be a local efficient point
+    //   return(zeros);
+    // }
+    
+    NumericMatrix gMat = cbind(g1,g2,g3);
+    
+    NumericVector weights;
+    
+    try {
+      Function solve = Environment::base_env()["solve"];
+      weights = solve(gMat, moNorm);
+    } catch(const std::exception& e) {
+      // ignore
+    }
+    
+    if (weights != nullptr) {
+      if (is_true(any(weights < 0))) {
+        weights[weights < 0] = 0;
+        weights[weights > 0] = 0.0 / sum(weights > 0);
+        return weights[0] * g1 + weights[1] * g2 + weights[2] * g3;
+      } else {
+        return(moNorm);
+      }
+    } else {
+      return(moNorm);
+    }
+  } else {
+    double maxAngle = max(NumericVector::create(angle1, angle2, angle3));
+    if (angle1 == maxAngle) {
+      return(0.5 * (g1 + g2));
+    } else if (angle2 == maxAngle) {
+      return(0.5 * (g1 + g3));
+    } else {
+      return(0.5 * (g2 + g3));
+    }
+  }
+  
+}
+
+// [[Rcpp::export]]
+NumericMatrix getBiObjGradientGridCPP(NumericMatrix gradMat1, NumericMatrix gradMat2, double precNorm, double precAngle) {
+  int n = gradMat1.rows();
+  int d = gradMat1.cols();
+  NumericMatrix moGradMat(n, d);
+  
+  for (int i = 0; i < n; i++) {
+    moGradMat(i,_) = getBiObjGradientCPP(gradMat1(i,_), gradMat2(i,_), precNorm, precAngle);
+  }
+  
+  return moGradMat;
+}
+
+// [[Rcpp::export]]
+NumericMatrix getTriObjGradientGridCPP(NumericMatrix gradMat1, NumericMatrix gradMat2, NumericMatrix gradMat3, double precNorm, double precAngle) {
+  int n = gradMat1.rows();
+  int d = gradMat1.cols();
+  NumericMatrix moGradMat(n, d);
+  
+  for (int i = 0; i < n; i++) {
+    moGradMat(i,_) = getTriObjGradientCPP(gradMat1(i,_), gradMat2(i,_), gradMat3(i,_), precNorm, precAngle);
+  }
+  
+  return moGradMat;
+}
+

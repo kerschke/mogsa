@@ -74,31 +74,28 @@ computeGradientFieldFast = function(points, fn, obj.values = NULL, prec.norm = 1
   step.sizes = getStepSizes(points)
   
   cat("Estimating single-objective gradients ...\n")
-  grad.mat.1 = -gridBasedGradient(fn.mat[,1], dims, step.sizes)
-  grad.mat.2 = -gridBasedGradient(fn.mat[,2], dims, step.sizes)
+  
+  grad.mat.1 = -gridBasedGradientCPP(fn.mat[,1], dims, step.sizes, prec.norm, prec.angle)
+  cat("Finished objective 1\n")
+  grad.mat.2 = -gridBasedGradientCPP(fn.mat[,2], dims, step.sizes, prec.norm, prec.angle)
+  cat("Finished objective 2\n")
   
   if (obj == 2) {
     cat("Estimating multi-objective gradients ...\n")
     
-    tmp = lapply(1:n, function(i) {
-      getMOGradient(grad.mat.1[i,], grad.mat.2[i,], prec.norm = prec.norm, prec.angle = prec.angle)
-    })
-    
-    mo.grad.mat = do.call(rbind, tmp)
+    mo.grad.mat = getBiObjGradientGridCPP(grad.mat.1, grad.mat.2, prec.norm, prec.angle)
   }
   
   if (obj == 3) {
-    grad.mat.3 = -gridBasedGradient(fn.mat[,3], dims, step.sizes)
+    grad.mat.3 = -gridBasedGradientCPP(fn.mat[,3], dims, step.sizes, prec.norm, prec.angle)
+    cat("Finished objective 3\n")
     
     cat("Estimating multi-objective gradients ...\n")
-    
-    tmp = lapply(1:n, function(i) {
-      getMOGradient(grad.mat.1[i,], grad.mat.2[i,], grad.mat.3[i,], prec.norm = prec.norm, prec.angle = prec.angle)
-    })
-    
-    mo.grad.mat = do.call(rbind, tmp)
+
+    mo.grad.mat = getTriObjGradientGridCPP(grad.mat.1, grad.mat.2, grad.mat.3, prec.norm, prec.angle)
   }
   
+  cat("Finished multiobjective gradient\n")
   return(mo.grad.mat)
 }
 
@@ -120,14 +117,14 @@ getMOGradient = function(g1, g2, g3=NULL, prec.norm, prec.angle) {
   
   angle1 = computeAngleCPP(vec1 = g1, vec2 = g2, prec = prec.norm)
   
+  if (abs(180 - angle1) < prec.angle) {
+    # if the angle between both gradients is (approximately) 180 degree,
+    # this has to be a local efficient point
+    return(rep(0L, len))
+  } 
+  
   if (is.null(g3)) {
-    if (abs(180 - angle1) < prec.angle) {
-      # if the angle between both gradients is (approximately) 180 degree,
-      # this has to be a local efficient point
-      return(rep(0L, len))
-    } else {
-      return(g1 + g2)
-    }
+    return(g1 + g2)
   } else {
     g3 = normalizeVectorCPP(vec = g3, prec = prec.norm)
     if (all(g3 == 0)) {
@@ -141,24 +138,43 @@ getMOGradient = function(g1, g2, g3=NULL, prec.norm, prec.angle) {
       # this has to be a local efficient point
       return(rep(0L, len))
     }
+    
     angle3 = computeAngleCPP(vec1 = g2, vec2 = g3, prec = prec.norm)
     if (abs(180 - angle3) < prec.angle) {
       # if the angle between both gradients is (approximately) 180 degree,
       # this has to be a local efficient point
       return(rep(0L, len))
     }
+    
     if (abs(angle1 + angle2 + angle3 - 360) < prec.angle) {
       # if all gradients show in "opposite" directions, this has to be a local effient point
       return(rep(0L, len))
+    } else if (with.norm) {
+      n = normalizeVectorCPP(vec = crossProductCPP(g1-g2,g1-g3), prec = 0)
+      mo.norm = n * as.numeric(n %*% g1)
+      g.mat = cbind(g1,g2,g3)
+      
+      weights = NULL
+      try(expr = (weights = solve(g.mat, mo.norm)), silent = T)
+      
+      if (!is.null(weights)) {
+        if (any(weights < 0)) {
+          weights[weights < 0] = 0
+          weights[weights > 0] = 1 / sum(weights > 0)
+        }
+        mo = as.numeric(g.mat %*% weights)
+        return(mo)
+      } else {
+        return(mo.norm)
+      }
     } else {
-      # otherwise go with the widest angle
       max.angle = max(c(angle1, angle2, angle3))
       if (angle1 == max.angle) {
-        return(g1 + g2)
+        return(1/2 * (g1 + g2))
       } else if (angle2 == max.angle) {
-        return(g1 + g3)
+        return(1/2 * (g1 + g3))
       } else {
-        return(g2 + g3)
+        return(1/2 * (g2 + g3))
       }
     }
   }
@@ -170,9 +186,9 @@ calcMOGradient = function(ind, fn, prec.grad, prec.norm, prec.angle) {
   g = -estimateGradientBothDirections(fn = fn, ind = ind, prec.grad = prec.grad, check.data = FALSE)
   
   if (nrow(g) < 3) {
-    getMOGradient(g[1,], g[2,], prec.norm = prec.norm, prec.angle = prec.angle)
+    getBiObjGradientCPP(g[1,], g[2,], prec.norm, prec.angle)
   } else {
-    getMOGradient(g[1,], g[2,], g[3,], prec.norm = prec.norm, prec.angle = prec.angle)
+    getTriObjGradientCPP(g[1,], g[2,], g[3,], prec.norm, prec.angle)
   }
 }
 
