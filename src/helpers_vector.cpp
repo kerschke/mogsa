@@ -666,8 +666,8 @@ NumericVector getTriObjGradientCPP(NumericVector g1, NumericVector g2, NumericVe
     
     if (weights != nullptr) {
       if (is_true(any(weights < 0))) {
-        weights[weights < 0] = 0;
-        weights[weights > 0] = 0.0 / sum(weights > 0);
+        weights[weights < 0] = 0.0;
+        weights[weights > 0] = 1.0 / sum(weights > 0);
         return weights[0] * g1 + weights[1] * g2 + weights[2] * g3;
       } else {
         return(moNorm);
