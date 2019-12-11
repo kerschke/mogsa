@@ -153,7 +153,7 @@ calculateMaxDisplayHeight = function(df, max.height, include.diagonals = T) {
     neighbour.heights = apply(deltas, 1, function(d) {
       j = i+d
       if (any(j <= 0) | any(j > dims)) {
-        0
+        Inf
       } else {
         id = convertIndices2CellIDCPP(j, dims)
         sorted.df[id,"height"]
