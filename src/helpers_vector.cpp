@@ -388,6 +388,59 @@ IntegerVector convertCellID2IndicesCPP(int cellID, IntegerVector dims) {
 // }
 
 // [[Rcpp::export]]
+IntegerVector locallyNondominatedCPP(NumericMatrix fnMat, IntegerVector dims) {
+  int n = fnMat.nrow();
+  int d = dims.size();
+  
+  IntegerVector locallyNondominated;
+  
+  Rcpp::Function expandGrid("expand.grid");
+  List dimensionSteps;
+  
+  for (int dim = 0; dim < d; dim++) {
+    IntegerVector v = IntegerVector::create(-2,-1,0,1,2);
+    dimensionSteps.push_back(v);
+  }
+  
+  DataFrame deltasDF = expandGrid(dimensionSteps);
+  IntegerMatrix deltas = internal::convert_using_rfunction(deltasDF, "as.matrix");
+  int nDeltas = deltas.nrow();
+  
+  // helper
+  IntegerVector indices;
+  IntegerVector neighbourIndices;
+  bool dominated;
+  int neighbourID;
+  
+  for (int id = 1; id <= n; id++) {
+    indices = convertCellID2IndicesCPP(id, dims);
+    dominated = false;
+    
+    for (int r = 0; r < nDeltas; r++) {
+      neighbourIndices = indices + deltas(r, _);
+      if (is_true(any(neighbourIndices < 1)) ||
+          is_true(any(neighbourIndices > dims))) {
+        continue;
+      }
+      
+      neighbourID = convertIndices2CellIDCPP(neighbourIndices, dims);
+      
+      if (is_true(all(fnMat(neighbourID - 1, _) <= fnMat(id - 1, _))) &&
+          is_true(any(fnMat(neighbourID - 1, _) < fnMat(id - 1, _)))) {
+        dominated = true;
+        break;
+      }
+    }
+    
+    if (!dominated) {
+      locallyNondominated.push_back(id);
+    }
+  }
+  
+  return locallyNondominated;
+}
+
+// [[Rcpp::export]]
 NumericMatrix gridBasedGradientCPP(NumericVector fnVec, IntegerVector dims, NumericVector stepSizes, double precNorm, double precAngle) {
   int n = fnVec.size();
   int d = dims.size();

@@ -33,6 +33,10 @@ convertCellID2IndicesCPP <- function(cellID, dims) {
     .Call(`_mogsa_convertCellID2IndicesCPP`, cellID, dims)
 }
 
+locallyNondominatedCPP <- function(fnMat, dims) {
+    .Call(`_mogsa_locallyNondominatedCPP`, fnMat, dims)
+}
+
 gridBasedGradientCPP <- function(fnVec, dims, stepSizes, precNorm, precAngle) {
     .Call(`_mogsa_gridBasedGradientCPP`, fnVec, dims, stepSizes, precNorm, precAngle)
 }

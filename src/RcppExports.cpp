@@ -102,6 +102,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// locallyNondominatedCPP
+IntegerVector locallyNondominatedCPP(NumericMatrix fnMat, IntegerVector dims);
+RcppExport SEXP _mogsa_locallyNondominatedCPP(SEXP fnMatSEXP, SEXP dimsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type fnMat(fnMatSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    rcpp_result_gen = Rcpp::wrap(locallyNondominatedCPP(fnMat, dims));
+    return rcpp_result_gen;
+END_RCPP
+}
 // gridBasedGradientCPP
 NumericMatrix gridBasedGradientCPP(NumericVector fnVec, IntegerVector dims, NumericVector stepSizes, double precNorm, double precAngle);
 RcppExport SEXP _mogsa_gridBasedGradientCPP(SEXP fnVecSEXP, SEXP dimsSEXP, SEXP stepSizesSEXP, SEXP precNormSEXP, SEXP precAngleSEXP) {
@@ -200,6 +212,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mogsa_findNextCellCPP", (DL_FUNC) &_mogsa_findNextCellCPP, 1},
     {"_mogsa_convertIndices2CellIDCPP", (DL_FUNC) &_mogsa_convertIndices2CellIDCPP, 2},
     {"_mogsa_convertCellID2IndicesCPP", (DL_FUNC) &_mogsa_convertCellID2IndicesCPP, 2},
+    {"_mogsa_locallyNondominatedCPP", (DL_FUNC) &_mogsa_locallyNondominatedCPP, 2},
     {"_mogsa_gridBasedGradientCPP", (DL_FUNC) &_mogsa_gridBasedGradientCPP, 5},
     {"_mogsa_cumulateGradientsCPP", (DL_FUNC) &_mogsa_cumulateGradientsCPP, 5},
     {"_mogsa_getBiObjGradientCPP", (DL_FUNC) &_mogsa_getBiObjGradientCPP, 4},
