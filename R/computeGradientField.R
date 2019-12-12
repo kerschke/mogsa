@@ -97,6 +97,11 @@ computeGradientFieldGrid = function(points, fn, obj.values = NULL, prec.norm = 1
   return(mo.grad.mat)
 }
 
+#' @export
+genericMOGradient = function(G, prec.norm = 1e-6) {
+  normalizeVectorCPP(pracma::qpspecial(G)$d, prec.norm)
+}
+
 calcMOGradient = function(ind, fn, prec.grad, prec.norm, prec.angle) {
   len = length(ind)
   
