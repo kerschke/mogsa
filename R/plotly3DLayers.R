@@ -1,20 +1,28 @@
 #' @export
-plotly3DLayers = function(x, fn, mode = "decision.space", max.quantile = 0.05, no.steps = 20) {
+plotly3DLayers = function(x, fn, mode = "decision.space", max.quantile = 0.05, no.steps = 20, impute.zero = T) {
   # x: columns x1,x2,x3,height
   # if include.objectives, also y1,y2(,y3) are required
   # fn: smoof function, 3 dimensional decision space
-  
-  max.height = quantile(x$height, max.quantile)
-  min.height = min(x$height)
-  step.sizes = getStepSizes(x)
   
   n = smoof::getNumberOfObjectives(fn)
   lower = smoof::getLowerBoxConstraints(fn)
   upper = smoof::getUpperBoxConstraints(fn)
   
+  if (impute.zero) {
+    ## impute heights of zero for log-scale visualizations
+    z = x$height
+    mz = min(z[z != 0])
+    z[z == 0] = mz / 2
+    x$height = z
+  }
+  
   x.boundaries = c()
   
+  max.height = quantile(x$height, max.quantile)
+  step.sizes = getStepSizes(x)
+  
   df.max = calculateMaxDisplayHeight(x, max.height, include.diagonals = F)
+  min.height = min(unlist(df.max$max.height))
   
   for (height in seq(min.height, max.height, (max.height - min.height) / (no.steps - 1))) {
     boundary = df.max[which(df.max$height <= height & df.max$max.height >= height),]
@@ -39,10 +47,17 @@ plotly3DLayers = function(x, fn, mode = "decision.space", max.quantile = 0.05, n
     )
   }
   
+  marker = list(
+    color=~log(height),
+    colorscale=plotlyColorscale(),
+    cmin=log(min(x$height)),
+    cmax=log(max(x$height))
+  )
+  
   if (mode == "both") {
     x.shared = highlight_key(x.boundaries)
-    p.decision = plotly3DLayersDecisionSpace(x.shared, fn, scene="scene")
-    p.objective = plotly3DLayersObjectiveSpace(x.shared, fn, scene="scene2")
+    p.decision = plotly3DLayersDecisionSpace(x.shared, fn, marker, scene="scene")
+    p.objective = plotly3DLayersObjectiveSpace(x.shared, fn, marker, scene="scene2")
     
     domain.left = list(
       x=c(0,0.5),
@@ -74,43 +89,45 @@ plotly3DLayers = function(x, fn, mode = "decision.space", max.quantile = 0.05, n
       frame = 5000
     )
   } else if (mode == "decision.space") {
-    plotly3DLayersDecisionSpace(x.boundaries,fn) %>% layout(
+    plotly3DLayersDecisionSpace(x.boundaries, fn, marker) %>% layout(
       scene = decision.scene
     )
   } else if (mode == "objective.space") {
     if (n == 3) {
-      plotly3DLayersObjectiveSpace(x.boundaries,fn) %>% layout(
+      plotly3DLayersObjectiveSpace(x.boundaries, fn, marker) %>% layout(
         scene = objective.scene
       )
     } else {
-      plotly3DLayersObjectiveSpace(x.boundaries,fn)
+      plotly3DLayersObjectiveSpace(x.boundaries, fn, marker)
     }
   }
   
 }
 
-plotly3DLayersObjectiveSpace = function(x, fn, scene="scene") {
+plotly3DLayersObjectiveSpace = function(x, fn, marker.style, scene="scene") {
   p = smoof::getNumberOfObjectives(fn)
   
   if (p == 2) {
     plot_ly(data = x,
+            type="scatter",
             x=~y1,y=~y2,
             frame=~frame,
-            ids=~paste(x1,x2,x3)
-    ) %>% add_markers(
-      color=~log(height+1)
+            ids=~paste(x1,x2,x3),
+            mode = "markers",
+            marker=marker.style
     ) %>% animation_opts(
       frame = 1000,
       transition = 0
     )
   } else if (p == 3) {
     plot_ly(data = x,
+            type="scatter3d",
             x=~y1,y=~y2,z=~y3,
             frame=~frame,
             scene=scene,
-            ids=~paste(x1,x2,x3)
-    ) %>% add_markers(
-      color=~log(height+1)
+            ids=~paste(x1,x2,x3),
+            mode = "markers",
+            marker=marker.style
     ) %>% animation_opts(
       frame = 1000,
       transition = 0
@@ -118,17 +135,18 @@ plotly3DLayersObjectiveSpace = function(x, fn, scene="scene") {
   }
 }
 
-plotly3DLayersDecisionSpace = function(x, fn, scene="scene") {
-  # TODO: adapt color scale
+plotly3DLayersDecisionSpace = function(x, fn, marker.style, scene="scene") {
   plot_ly(data = x,
+          type="scatter3d",
           x=~x1,y=~x2,z=~x3,
           scene=scene,
           frame = ~frame,
-          ids=~paste(x1,x2,x3)
-  ) %>% add_markers(
-    color=~log(height+1)
+          ids=~paste(x1,x2,x3),
+          mode = "markers",
+          marker=marker.style
   ) %>% animation_opts(
-    frame = 1000
+    frame = 1000,
+    transition = 0
   )
 }
 

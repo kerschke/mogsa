@@ -1,5 +1,5 @@
 #' @export
-plotly3DScan = function(x, fn, mode = "decision.space") {
+plotly3DScan = function(x, fn, mode = "decision.space", impute.zero = T) {
   # x: columns x1,x2,x3,height
   # if include.objectives, also y1,y2(,y3) are required
   # fn: smoof function, 3 dimensional decision space
@@ -24,10 +24,25 @@ plotly3DScan = function(x, fn, mode = "decision.space") {
     )
   }
   
+  if (impute.zero) {
+    ## impute heights of zero for log-scale visualizations
+    z = x$height
+    mz = min(z[z != 0])
+    z[z == 0] = mz / 2
+    x$height = z
+  }
+  
+  marker = list(
+    color=~log(height),
+    colorscale=plotlyColorscale(),
+    cmin=log(min(x$height)),
+    cmax=log(max(x$height))
+  )
+  
   if (mode == "both") {
     x.shared = highlight_key(x)
-    p.decision = plotly3DScanDecisionSpace(x.shared, fn, scene="scene")
-    p.objective = plotly3DScanObjectiveSpace(x.shared, fn, scene="scene2")
+    p.decision = plotly3DScanDecisionSpace(x.shared, fn, marker, scene="scene")
+    p.objective = plotly3DScanObjectiveSpace(x.shared, fn, marker, scene="scene2")
     
     domain.left = list(
       x=c(0,0.5),
@@ -74,7 +89,7 @@ plotly3DScan = function(x, fn, mode = "decision.space") {
   
 }
 
-plotly3DScanObjectiveSpace = function(x, fn, frame="x3", scene="scene") {
+plotly3DScanObjectiveSpace = function(x, fn, marker.style, frame="x3", scene="scene") {
   n = smoof::getNumberOfObjectives(fn)
   
   if (frame == "x1") {
@@ -90,29 +105,31 @@ plotly3DScanObjectiveSpace = function(x, fn, frame="x3", scene="scene") {
   
   if (n == 2) {
     plot_ly(data = x,
+            type="scatter",
             x=~y1,y=~y2,
             ids=ids,
-            frame=frame
-    ) %>% add_markers(
-      color=~log(height+1)
+            frame=frame,
+            mode = "markers",
+            marker=marker.style
     ) %>% animation_opts(
       frame = 1000
     )
   } else if (n == 3) {
     plot_ly(data = x,
+            type="scatter3d",
             x=~y1,y=~y2,z=~y3,
             ids = ids,
             frame = frame,
-            scene = scene
-    ) %>% add_markers(
-      color=~log(height+1)
+            scene = scene,
+            mode = "markers",
+            marker=marker.style
     ) %>% animation_opts(
       frame = 1000
     )
   }
 }
 
-plotly3DScanDecisionSpace = function(x, fn, frame="x3", scene="scene") {
+plotly3DScanDecisionSpace = function(x, fn, marker.style, frame="x3", scene="scene") {
   if (frame == "x1") {
     frame = ~x1
     ids = ~paste(x2,x3)
@@ -124,14 +141,14 @@ plotly3DScanDecisionSpace = function(x, fn, frame="x3", scene="scene") {
     ids = ~paste(x1,x2)
   }
   
-  # TODO: adapt color scale
   plot_ly(data = x,
+          type = "scatter3d",
           x=~x1,y=~x2,z=~x3,
           frame = frame,
           ids = ids,
-          scene = scene
-  ) %>% add_markers(
-    color=~log(height+1)
+          scene = scene,
+          mode = "markers",
+          marker=marker.style
   ) %>% animation_opts(
     frame = 1000
   )

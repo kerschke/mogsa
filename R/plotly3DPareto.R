@@ -1,5 +1,5 @@
 #' @export
-plotly3DPareto = function(x, fn, mode = "decision.space") {
+plotly3DPareto = function(x, fn, mode = "decision.space", impute.zero = T) {
   # x: columns x1,x2,x3,height
   # if include.objectives, also y1,y2(,y3) are required
   # fn: smoof function, 3 dimensional decision space
@@ -7,6 +7,14 @@ plotly3DPareto = function(x, fn, mode = "decision.space") {
   n = smoof::getNumberOfObjectives(fn)
   lower = smoof::getLowerBoxConstraints(fn)
   upper = smoof::getUpperBoxConstraints(fn)
+  
+  if (impute.zero) {
+    ## impute heights of zero for log-scale visualizations
+    z = x$height
+    mz = min(z[z != 0])
+    z[z == 0] = mz / 2
+    x$height = z
+  }
   
   obj.space = as.matrix(x[,grep("y.*", names(x))])
   dec.space = as.matrix(x[,grep("x.*", names(x))])
@@ -36,10 +44,17 @@ plotly3DPareto = function(x, fn, mode = "decision.space") {
     )
   }
   
+  marker = list(
+    color=~log(height),
+    colorscale=plotlyColorscale(),
+    cmin=log(min(x$height)),
+    cmax=log(max(x$height))
+  )
+  
   if (mode == "both") {
     x.shared = highlight_key(x.nondom)
-    p.decision = plotly3DParetoDecisionSpace(x.shared, fn, scene="scene")
-    p.objective = plotly3DParetoObjectiveSpace(x.shared, fn, scene="scene2")
+    p.decision = plotly3DParetoDecisionSpace(x.shared, fn, marker, scene="scene")
+    p.objective = plotly3DParetoObjectiveSpace(x.shared, fn, marker, scene="scene2")
     
     domain.left = list(
       x=c(0,0.5),
@@ -91,33 +106,34 @@ nondominated = function(fnMat, dims) {
   locallyNondom[nondom]
 }
 
-plotly3DParetoObjectiveSpace = function(x, fn, scene="scene") {
+plotly3DParetoObjectiveSpace = function(x, fn, marker.style, scene="scene") {
   n = smoof::getNumberOfObjectives(fn)
   
   if (n == 2) {
     plot_ly(data = x,
+            type="scatter",
             x=~y1,y=~y2,
-            ids=ids
-    ) %>% add_markers(
-      color=~log(height+1)
+            ids=ids,
+            mode = "markers",
+            marker = marker.style
     )
   } else if (n == 3) {
     plot_ly(data = x,
+            type="scatter3d",
             x=~y1,y=~y2,z=~y3,
-            scene = scene
-    ) %>% add_markers(
-      color=~log(height+1)
+            scene = scene,
+            mode = "markers",
+            marker = marker.style
     )
   }
 }
 
-plotly3DParetoDecisionSpace = function(x, fn, scene="scene") {
-  # TODO: adapt color scale
+plotly3DParetoDecisionSpace = function(x, fn, marker.style, scene="scene") {
   plot_ly(data = x,
+          type="scatter3d",
           x=~x1,y=~x2,z=~x3,
-          scene = scene
-  ) %>% add_markers(
-    color=~log(height+1)
+          scene = scene,
+          mode = "markers",
+          marker = marker.style
   )
 }
-
