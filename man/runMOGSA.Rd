@@ -4,11 +4,22 @@
 \alias{runMOGSA}
 \title{Run MOGSA.}
 \usage{
-runMOGSA(ind, fn = NULL, max.no.basins = 15L, max.no.steps.ls = 600L,
-  max.no.steps.exploration = 100L, scale.step = 0.5,
-  exploration.step = 0.2, prec.grad = 1e-06, prec.norm = 1e-06,
-  prec.angle = 1e-04, ls.method = "both", check.data = TRUE,
-  show.info = TRUE, allow.restarts = TRUE)
+runMOGSA(
+  ind,
+  fn = NULL,
+  max.no.basins = 15L,
+  max.no.steps.ls = 600L,
+  max.no.steps.exploration = 100L,
+  scale.step = 0.5,
+  exploration.step = 0.2,
+  prec.grad = 1e-06,
+  prec.norm = 1e-06,
+  prec.angle = 1e-04,
+  ls.method = "both",
+  check.data = TRUE,
+  show.info = TRUE,
+  allow.restarts = TRUE
+)
 }
 \arguments{
 \item{ind}{[\code{\link{numeric}(d)}]\cr

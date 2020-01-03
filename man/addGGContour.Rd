@@ -4,9 +4,20 @@
 \alias{addGGContour}
 \title{Add Contour Lines to Gradient Field Heatmap.}
 \usage{
-addGGContour(g, lower, upper, fn1, fn2, fn3, log.scale = TRUE,
-  col1 = "goldenrod1", col2 = "white", col3 = "cyan3",
-  n.points = 30L, ...)
+addGGContour(
+  g,
+  lower,
+  upper,
+  fn1,
+  fn2,
+  fn3,
+  log.scale = TRUE,
+  col1 = "goldenrod1",
+  col2 = "white",
+  col3 = "cyan3",
+  n.points = 30L,
+  ...
+)
 }
 \arguments{
 \item{g}{[\code{ggplot}]\cr

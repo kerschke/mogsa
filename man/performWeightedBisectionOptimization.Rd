@@ -4,9 +4,18 @@
 \alias{performWeightedBisectionOptimization}
 \title{Performs a weighted bi-section optimization.}
 \usage{
-performWeightedBisectionOptimization(x1, x2, fn, g1 = NULL, g2 = NULL,
-  prec.grad = 1e-06, prec.norm = 1e-06, max.steps = 1000L, lower,
-  upper)
+performWeightedBisectionOptimization(
+  x1,
+  x2,
+  fn,
+  g1 = NULL,
+  g2 = NULL,
+  prec.grad = 1e-06,
+  prec.norm = 1e-06,
+  max.steps = 1000L,
+  lower,
+  upper
+)
 }
 \arguments{
 \item{x1}{[\code{\link{numeric}(d)}]\cr

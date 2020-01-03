@@ -6,11 +6,22 @@
 \alias{estimateGradientBothDirections}
 \title{Approximate gradient of a single-objective function.}
 \usage{
-estimateGradientSingleDirection(fn, ind, side = NULL,
-  prec.grad = 1e-06, check.data = TRUE, ...)
+estimateGradientSingleDirection(
+  fn,
+  ind,
+  side = NULL,
+  prec.grad = 1e-06,
+  check.data = TRUE,
+  ...
+)
 
-estimateGradientBothDirections(fn, ind, prec.grad = 1e-04,
-  check.data = TRUE, ...)
+estimateGradientBothDirections(
+  fn,
+  ind,
+  prec.grad = 1e-04,
+  check.data = TRUE,
+  ...
+)
 }
 \arguments{
 \item{fn}{[\code{\link{function}}]\cr

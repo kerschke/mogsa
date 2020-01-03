@@ -4,9 +4,17 @@
 \alias{ggplotHeatmap}
 \title{Visualize Heatmap of Multi-Objective Gradients.}
 \usage{
-ggplotHeatmap(df, var1 = "x1", var2 = "x2", log.scale = TRUE,
-  impute.zero = TRUE, minimalistic.image = FALSE, color.palette,
-  legend.position, ...)
+ggplotHeatmap(
+  df,
+  var1 = "x1",
+  var2 = "x2",
+  log.scale = TRUE,
+  impute.zero = TRUE,
+  minimalistic.image = FALSE,
+  color.palette,
+  legend.position,
+  ...
+)
 }
 \arguments{
 \item{df}{[\code{\link{data.frame}}]\cr

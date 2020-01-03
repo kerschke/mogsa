@@ -4,8 +4,14 @@
 \alias{computeGradientField}
 \title{Compute the multi-objective gradient vector for a set of points.}
 \usage{
-computeGradientField(points, fn, prec.grad = 1e-06, prec.norm = 1e-06,
-  prec.angle = 1e-04, parallelize = FALSE)
+computeGradientField(
+  points,
+  fn,
+  prec.grad = 1e-06,
+  prec.norm = 1e-06,
+  prec.angle = 1e-04,
+  parallelize = FALSE
+)
 }
 \arguments{
 \item{points}{[\code{\link{matrix}}]\cr

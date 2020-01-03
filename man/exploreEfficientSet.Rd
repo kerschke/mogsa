@@ -4,10 +4,18 @@
 \alias{exploreEfficientSet}
 \title{Explore locally efficient set.}
 \usage{
-exploreEfficientSet(ind, fn, gradient.mat,
-  max.no.steps.exploration = 400L, exploration.step = 0.2,
-  prec.grad = 1e-06, prec.norm = 1e-06, prec.angle = 1e-04,
-  check.data = TRUE, show.info = TRUE)
+exploreEfficientSet(
+  ind,
+  fn,
+  gradient.mat,
+  max.no.steps.exploration = 400L,
+  exploration.step = 0.2,
+  prec.grad = 1e-06,
+  prec.norm = 1e-06,
+  prec.angle = 1e-04,
+  check.data = TRUE,
+  show.info = TRUE
+)
 }
 \arguments{
 \item{ind}{[\code{\link{numeric}(d)}]\cr

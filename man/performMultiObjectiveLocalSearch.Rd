@@ -4,9 +4,17 @@
 \alias{performMultiObjectiveLocalSearch}
 \title{Performs a multi-objective local search.}
 \usage{
-performMultiObjectiveLocalSearch(x1, x2, x3, fn, prec.grad = 1e-06,
-  prec.norm = 1e-06, prec.angle = 1e-04, scale.step = 0.5,
-  max.steps = 1000L)
+performMultiObjectiveLocalSearch(
+  x1,
+  x2,
+  x3,
+  fn,
+  prec.grad = 1e-06,
+  prec.norm = 1e-06,
+  prec.angle = 1e-04,
+  scale.step = 0.5,
+  max.steps = 1000L
+)
 }
 \arguments{
 \item{x1}{[\code{\link{numeric}(d)}]\cr

@@ -4,9 +4,16 @@
 \alias{performGradientStep}
 \title{Perform multi-objective gradient descent step.}
 \usage{
-performGradientStep(ind, fn, gradient.mat, scale.step = 0.5,
-  prec.grad = 1e-06, prec.norm = 1e-06, prec.angle = 1e-04,
-  check.data = TRUE)
+performGradientStep(
+  ind,
+  fn,
+  gradient.mat,
+  scale.step = 0.5,
+  prec.grad = 1e-06,
+  prec.norm = 1e-06,
+  prec.angle = 1e-04,
+  check.data = TRUE
+)
 }
 \arguments{
 \item{ind}{[\code{\link{numeric}(d)}]\cr

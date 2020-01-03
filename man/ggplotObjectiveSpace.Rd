@@ -4,9 +4,17 @@
 \alias{ggplotObjectiveSpace}
 \title{Visualize Multi-Objective Gradient Landscape in the Objective Space.}
 \usage{
-ggplotObjectiveSpace(df, var1 = "y1", var2 = "y2", log.scale = TRUE,
-  impute.zero = TRUE, minimalistic.image = FALSE, color.palette,
-  legend.position, ...)
+ggplotObjectiveSpace(
+  df,
+  var1 = "y1",
+  var2 = "y2",
+  log.scale = TRUE,
+  impute.zero = TRUE,
+  minimalistic.image = FALSE,
+  color.palette,
+  legend.position,
+  ...
+)
 }
 \arguments{
 \item{df}{[\code{\link{data.frame}}]\cr

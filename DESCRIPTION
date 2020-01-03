@@ -29,5 +29,5 @@ BugReports: https://github.com/kerschke/mogsa/issues
 License: BSD_2_clause + file LICENSE
 LazyData: yes
 ByteCompile: yes
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
 Encoding: UTF-8

@@ -4,8 +4,7 @@
 \alias{addGGOptima}
 \title{Add (Known) Local Optima of Smoof Functions to Gradient Field Heatmap.}
 \usage{
-addGGOptima(g, fn1, fn2, fn3, symbol1 = 21L, symbol2 = 22L,
-  symbol3 = 24L, ...)
+addGGOptima(g, fn1, fn2, fn3, symbol1 = 21L, symbol2 = 22L, symbol3 = 24L, ...)
 }
 \arguments{
 \item{g}{[\code{ggplot}]\cr

@@ -4,9 +4,16 @@
 \alias{addGGArrows}
 \title{Add Gradient Vector Arrows to Gradient Field Heatmap.}
 \usage{
-addGGArrows(g, centers, gradients, fac = 0.025,
-  arrow_len = unit(0.075/2, "inches"), nColumns = 10L, nRows = 10L,
-  ...)
+addGGArrows(
+  g,
+  centers,
+  gradients,
+  fac = 0.025,
+  arrow_len = unit(0.075/2, "inches"),
+  nColumns = 10L,
+  nRows = 10L,
+  ...
+)
 }
 \arguments{
 \item{g}{[\code{ggplot}]\cr

@@ -4,10 +4,20 @@
 \alias{findLocallyEfficientPoint}
 \title{Find locally efficient point.}
 \usage{
-findLocallyEfficientPoint(ind, fn, gradient.mat, max.no.steps.ls = 500L,
-  scale.step = 0.5, prec.grad = 1e-06, prec.norm = 1e-06,
-  prec.angle = 1e-04, ls.method = "both", check.data = TRUE,
-  show.info = TRUE, allow.restarts = TRUE)
+findLocallyEfficientPoint(
+  ind,
+  fn,
+  gradient.mat,
+  max.no.steps.ls = 500L,
+  scale.step = 0.5,
+  prec.grad = 1e-06,
+  prec.norm = 1e-06,
+  prec.angle = 1e-04,
+  ls.method = "both",
+  check.data = TRUE,
+  show.info = TRUE,
+  allow.restarts = TRUE
+)
 }
 \arguments{
 \item{ind}{[\code{\link{numeric}(d)}]\cr
