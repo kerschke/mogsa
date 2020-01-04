@@ -18,3 +18,19 @@ plotlyColorscale = function(color.palette = NULL) {
   
   mapply(list, seq(0,1,length.out=l), color.palette, SIMPLIFY = F)
 }
+
+imputeZero = function(height) {
+  ## impute heights of zero for log-scale visualizations
+  min.height = min(height[height != 0])
+  height[height == 0] = min.height / 2
+  return(height)
+}
+
+plotlyMarker = function(grid) {
+  list(
+    color=~log(height),
+    colorscale=plotlyColorscale(),
+    cmin=log(min(grid$height)),
+    cmax=log(max(grid$height))
+  )
+}
