@@ -773,20 +773,12 @@ NumericMatrix getTriObjGradientGridCPP(NumericMatrix gradMat1, NumericMatrix gra
 }
 
 // [[Rcpp::export]]
-NumericVector calculateMaxDisplayHeightCPP(NumericMatrix centers, NumericVector heights, bool includeDiagonals) {
+NumericVector calculateMaxDisplayHeightCPP(NumericVector heights, IntegerVector dims, bool includeDiagonals) {
   // points are "dominated" by their neighbours from some point on
   // calculate this point here
-  int n = centers.nrow();
-  int d = centers.ncol();
+  int n = heights.length();
   NumericVector maxHeights(n);
-  
-  IntegerVector dims(d, 0);
-  for (int j = 0; j < d; j++) {
-    NumericVector ctr = centers(_,j);
-    ctr = unique(ctr);
-    dims[j] = ctr.size();
-  }
-  
+
   IntegerMatrix deltas;
   if (includeDiagonals) {
     Rcpp::Function expandGrid("expand.grid");

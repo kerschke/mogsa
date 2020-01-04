@@ -204,15 +204,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // calculateMaxDisplayHeightCPP
-NumericVector calculateMaxDisplayHeightCPP(NumericMatrix centers, NumericVector heights, bool includeDiagonals);
-RcppExport SEXP _mogsa_calculateMaxDisplayHeightCPP(SEXP centersSEXP, SEXP heightsSEXP, SEXP includeDiagonalsSEXP) {
+NumericVector calculateMaxDisplayHeightCPP(NumericVector heights, IntegerVector dims, bool includeDiagonals);
+RcppExport SEXP _mogsa_calculateMaxDisplayHeightCPP(SEXP heightsSEXP, SEXP dimsSEXP, SEXP includeDiagonalsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type centers(centersSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type heights(heightsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
     Rcpp::traits::input_parameter< bool >::type includeDiagonals(includeDiagonalsSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateMaxDisplayHeightCPP(centers, heights, includeDiagonals));
+    rcpp_result_gen = Rcpp::wrap(calculateMaxDisplayHeightCPP(heights, dims, includeDiagonals));
     return rcpp_result_gen;
 END_RCPP
 }
