@@ -15,10 +15,16 @@ plotly3DLayers = function(grid, fn, mode = "decision.space", no.steps = 20, impu
   min.height = min(maxh)
   max.height = max(maxh[grid$height <= min.height])
   
+  ecdf.height = ecdf(grid$height)
+  q.min = ecdf.height(min.height)
+  q.max = ecdf.height(max.height)
+  
   x.boundaries = c()
+  
+  quantiles = seq(q.min, q.max, length.out = no.steps)
+  heights = quantile(grid$height, probs=quantiles)
 
-  for (height in seq(min.height, max.height, (max.height - min.height) / (no.steps - 1))) {
-    ids = which(grid$height <= height & maxh >= height)
+  for (height in heights) {ids = which(grid$height <= height & maxh >= height)
     boundary = as.data.frame(cbind(
       grid$dec.space[ids,,drop=F],
       grid$height[ids,,drop=F],
