@@ -1,7 +1,6 @@
 #' @export
-plotly3DPareto = function(x, fn, mode = "decision.space", impute.zero = T) {
-  # x: columns x1,x2,x3,height
-  # if include.objectives, also y1,y2(,y3) are required
+plotly3DPareto = function(grid, fn, mode = "decision.space", impute.zero = T) {
+  # grid: list of obj.space, dims, dec.space, step.sizes
   # fn: smoof function, 3 dimensional decision space
   
   n = smoof::getNumberOfObjectives(fn)
@@ -9,24 +8,17 @@ plotly3DPareto = function(x, fn, mode = "decision.space", impute.zero = T) {
   upper = smoof::getUpperBoxConstraints(fn)
   
   if (impute.zero) {
-    ## impute heights of zero for log-scale visualizations
-    z = x$height
-    mz = min(z[z != 0])
-    z[z == 0] = mz / 2
-    x$height = z
+    grid$height = imputeZero(grid$height)
   }
   
-  obj.space = as.matrix(x[,grep("y.*", names(x))])
-  dec.space = as.matrix(x[,grep("x.*", names(x))])
+  nondomIndices = nondominated(grid$obj.space, grid$dims)
   
-  dims = c()
-  for (j in 1:ncol(dec.space)) {
-    dims = c(dims, length(unique(dec.space[,j])))
-  }
-  
-  nondomIndices = nondominated(obj.space, dims)
-  
-  x.nondom = x[nondomIndices,]
+  x.nondom = cbind(
+    grid$dec.space[nondomIndices,,drop=F],
+    grid$height[nondomIndices,,drop=F],
+    grid$obj.space[nondomIndices,,drop=F]
+  )
+  x.nondom = as.data.frame(x.nondom)
   
   decision.scene = list(
     aspectmode='cube',
@@ -38,18 +30,13 @@ plotly3DPareto = function(x, fn, mode = "decision.space", impute.zero = T) {
   if (n == 3) {
     objective.scene = list(
       aspectmode='cube',
-      xaxis = list(range = c(min(x.nondom$y1),max(x.nondom$y1)), title='y₁'),
-      yaxis = list(range = c(min(x.nondom$y2),max(x.nondom$y2)), title='y₂'),
-      zaxis = list(range = c(min(x.nondom$y3),max(x.nondom$y3)), title='y₃')
+      xaxis = list(range = c(min(x.nondom[,'y1']),max(x.nondom[,'y1'])), title='y₁'),
+      yaxis = list(range = c(min(x.nondom[,'y2']),max(x.nondom[,'y2'])), title='y₂'),
+      zaxis = list(range = c(min(x.nondom[,'y3']),max(x.nondom[,'y3'])), title='y₃')
     )
   }
   
-  marker = list(
-    color=~log(height),
-    colorscale=plotlyColorscale(),
-    cmin=log(min(x$height)),
-    cmax=log(max(x$height))
-  )
+  marker = plotlyMarker(grid)
   
   if (mode == "both") {
     x.shared = highlight_key(x.nondom)

@@ -52,30 +52,22 @@ computeGradientField = function(points, fn, prec.grad = 1e-6,
 }
 
 #' @export
-computeGradientFieldGrid = function(points, fn, obj.values = NULL, prec.norm = 1e-6, prec.angle = 1e-4) {
+computeGradientFieldGrid = function(grid, fn, prec.norm = 1e-6, prec.angle = 1e-4) {
   obj = smoof::getNumberOfObjectives(fn)
   d = ncol(points) # number of input dimensions
   n = nrow(points) # total number of points
   # calculate dimensions of given field of points
-  dims = c()
-  for (j in 1:d) {
-    dims = c(dims, length(unique(points[,j])))
-  }
   
-  if (is.null(obj.values)) {
+  if (is.null(grid$obj.space)) {
     cat("Evaluating grid of objective values ...\n")
-    fn.mat = calculateObjectiveValues(points, fn)
-  } else {
-    fn.mat = obj.values
+    grid$obj.space = calculateObjectiveValues(grid$dec.space, fn)
   }
 
-  step.sizes = getStepSizes(points)
-  
   cat("Estimating single-objective gradients ...\n")
   
-  grad.mat.1 = -gridBasedGradientCPP(fn.mat[,1], dims, step.sizes, prec.norm, prec.angle)
+  grad.mat.1 = -gridBasedGradientCPP(grid$obj.space[,1], grid$dims, grid$step.sizes, prec.norm, prec.angle)
   cat("Finished objective 1\n")
-  grad.mat.2 = -gridBasedGradientCPP(fn.mat[,2], dims, step.sizes, prec.norm, prec.angle)
+  grad.mat.2 = -gridBasedGradientCPP(grid$obj.space[,2], grid$dims, grid$step.sizes, prec.norm, prec.angle)
   cat("Finished objective 2\n")
   
   if (obj == 2) {
@@ -85,7 +77,7 @@ computeGradientFieldGrid = function(points, fn, obj.values = NULL, prec.norm = 1
   }
   
   if (obj == 3) {
-    grad.mat.3 = -gridBasedGradientCPP(fn.mat[,3], dims, step.sizes, prec.norm, prec.angle)
+    grad.mat.3 = -gridBasedGradientCPP(grid$obj.space[,3], grid$dims, grid$step.sizes, prec.norm, prec.angle)
     cat("Finished objective 3\n")
     
     cat("Estimating multi-objective gradients ...\n")
@@ -93,7 +85,7 @@ computeGradientFieldGrid = function(points, fn, obj.values = NULL, prec.norm = 1
     mo.grad.mat = getTriObjGradientGridCPP(grad.mat.1, grad.mat.2, grad.mat.3, prec.norm, prec.angle)
   }
   
-  cat("Finished multiobjective gradient\n")
+  cat("Finished multiobjective gradients\n")
   return(mo.grad.mat)
 }
 
@@ -112,23 +104,6 @@ calcMOGradient = function(ind, fn, prec.grad, prec.norm, prec.angle) {
   } else {
     getTriObjGradientCPP(g[1,], g[2,], g[3,], prec.norm, prec.angle)
   }
-}
-
-getStepSizes = function(df) {
-  df.x = signif(df, 6)
-  unique.x = lapply(df.x, unique)
-  
-  # we need to assume that the steps in each dimension are alway the same
-  # e.g. step size in x1 is 0.01, x2 is 0.02 etc.
-  step.sizes = c()
-  
-  for (i in 1:length(unique.x)) {
-    diff.x = diff(sort(unique.x[[i]]))
-    diff.x = signif(diff.x, 6)
-    step.sizes = c(step.sizes, min(diff.x))
-  }
-  
-  return(step.sizes)
 }
 
 # computeHighDimensionalGradientField = function(points, fn1, fn2,

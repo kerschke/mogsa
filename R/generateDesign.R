@@ -9,12 +9,14 @@ generateDesign = function(fn, points.per.dimension=NULL, step.size=NULL) {
   }
   
   l = list()
+  step.sizes = c()
   
   if (!is.null(step.size)) {
     # Use step.size
     for (i in 1:n) {
       x.i = c(paste0("x", i))
       l[[x.i]] = seq(lower[i], upper[i], step.size)
+      step.sizes = c(step.sizes, step.size)
     }
   } else {
     # Use points.per.dimension
@@ -33,8 +35,14 @@ generateDesign = function(fn, points.per.dimension=NULL, step.size=NULL) {
     for (i in 1:n) {
       x.i = c(paste0("x", i))
       l[[x.i]] = seq(lower[i], upper[i], length.out = points.per.dimension[i])
+      step.sizes = c(step.sizes, (upper[i] - lower[i])/(points.per.dimension[i] - 1))
     }
   }
   
-  expand.grid(l)
+  grid = list()
+  grid$dec.space = as.matrix(expand.grid(l))
+  grid$dims = points.per.dimension
+  grid$step.sizes = step.sizes
+  
+  return(grid)
 }

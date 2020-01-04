@@ -1,7 +1,6 @@
 #' @export
-plotly3DLayers = function(x, fn, mode = "decision.space", no.steps = 20, impute.zero = T) {
-  # x: columns x1,x2,x3,height
-  # if include.objectives, also y1,y2(,y3) are required
+plotly3DLayers = function(grid, fn, mode = "decision.space", no.steps = 20, impute.zero = T) {
+  # grid: list of obj.space, dims, dec.space, step.sizes
   # fn: smoof function, 3 dimensional decision space
   
   n = smoof::getNumberOfObjectives(fn)
@@ -9,26 +8,29 @@ plotly3DLayers = function(x, fn, mode = "decision.space", no.steps = 20, impute.
   upper = smoof::getUpperBoxConstraints(fn)
   
   if (impute.zero) {
-    ## impute heights of zero for log-scale visualizations
-    z = x$height
-    mz = min(z[z != 0])
-    z[z == 0] = mz / 2
-    x$height = z
+    grid$height = imputeZero(grid$height)
   }
   
-  maxh = calculateMaxDisplayHeightCPP(as.matrix(x[,1:3]), as.matrix(x[,4]), F)
+  maxh = calculateMaxDisplayHeightCPP(grid$height, grid$dims, F)
   min.height = min(maxh)
-  max.height = max(maxh[x$height <= min.height])
+  max.height = max(maxh[grid$height <= min.height])
   
   x.boundaries = c()
-  step.sizes = getStepSizes(x)
-  
+
   for (height in seq(min.height, max.height, (max.height - min.height) / (no.steps - 1))) {
-    boundary = x[which(x$height <= height & maxh >= height),]
+    ids = which(grid$height <= height & maxh >= height)
+    boundary = as.data.frame(cbind(
+      grid$dec.space[ids,,drop=F],
+      grid$height[ids,,drop=F],
+      grid$obj.space[ids,,drop=F]
+    ))
     
     boundary$frame = height
     x.boundaries = rbind(x.boundaries, boundary)
   }
+  
+  x.boundaries = as.data.frame(x.boundaries)
+  # print(head(x.boundaries))
   
   decision.scene = list(
     aspectmode='cube',
@@ -46,12 +48,7 @@ plotly3DLayers = function(x, fn, mode = "decision.space", no.steps = 20, impute.
     )
   }
   
-  marker = list(
-    color=~log(height),
-    colorscale=plotlyColorscale(),
-    cmin=log(min(x$height)),
-    cmax=log(max(x$height))
-  )
+  marker = plotlyMarker(grid)
   
   if (mode == "both") {
     x.shared = highlight_key(x.boundaries)

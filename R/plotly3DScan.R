@@ -1,12 +1,15 @@
 #' @export
-plotly3DScan = function(x, fn, mode = "decision.space", impute.zero = T) {
-  # x: columns x1,x2,x3,height
-  # if include.objectives, also y1,y2(,y3) are required
+plotly3DScan = function(grid, fn, mode = "decision.space", impute.zero = T) {
+  # grid: list of obj.space, dims, dec.space, step.sizes
   # fn: smoof function, 3 dimensional decision space
   
   n = smoof::getNumberOfObjectives(fn)
   lower = smoof::getLowerBoxConstraints(fn)
   upper = smoof::getUpperBoxConstraints(fn)
+  
+  if (impute.zero) {
+    grid$height = imputeZero(grid$height)
+  }
   
   decision.scene = list(
     aspectmode='cube',
@@ -14,6 +17,9 @@ plotly3DScan = function(x, fn, mode = "decision.space", impute.zero = T) {
     yaxis = list(range = c(lower[2],upper[2]), title='x₂'),
     zaxis = list(range = c(lower[3],upper[3]), title='x₃')
   )
+  
+  x = cbind(grid$dec.space, grid$height, grid$obj.space)
+  x = as.data.frame(x)
   
   if (n == 3) {
     objective.scene = list(
@@ -24,20 +30,7 @@ plotly3DScan = function(x, fn, mode = "decision.space", impute.zero = T) {
     )
   }
   
-  if (impute.zero) {
-    ## impute heights of zero for log-scale visualizations
-    z = x$height
-    mz = min(z[z != 0])
-    z[z == 0] = mz / 2
-    x$height = z
-  }
-  
-  marker = list(
-    color=~log(height),
-    colorscale=plotlyColorscale(),
-    cmin=log(min(x$height)),
-    cmax=log(max(x$height))
-  )
+  marker = plotlyMarker(grid)
   
   if (mode == "both") {
     x.shared = highlight_key(x)

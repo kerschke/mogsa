@@ -12,8 +12,8 @@ calculateObjectiveValues = function(points, fn, parallelize = FALSE) {
     obj.space = apply(points, 1, fn)
   }
   
-  obj.space = as.data.frame(t(obj.space))
-  names(obj.space) = names
+  obj.space = t(obj.space)
+  colnames(obj.space) = names
   
   return(obj.space)
 }
