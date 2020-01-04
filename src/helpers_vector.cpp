@@ -705,33 +705,26 @@ NumericVector getTriObjGradientCPP(NumericVector g1, NumericVector g2, NumericVe
     NumericVector n = normalizeVectorCPP(crossProductCPP(g1-g2,g1-g3), 0);
     NumericVector moNorm = n * sum(n * g1); // n * (n dot g1) = n * (distance to plane created by g1,g2,g3)
     
-    // useful?
-    // if (is_true(all(abs(moNorm) < precNorm))) {
-    //   // if the norm gradient is zero, this has to be a local efficient point
-    //   return(zeros);
-    // }
+    double normAngle1 = computeAngleCPP(g1-moNorm, g2-moNorm, precNorm);
+    double normAngle2 = computeAngleCPP(g1-moNorm, g3-moNorm, precNorm);
+    double normAngle3 = computeAngleCPP(g2-moNorm, g3-moNorm, precNorm);
     
-    NumericMatrix gMat = cbind(g1,g2,g3);
-    
-    NumericVector weights;
-    
-    try {
-      Function solve = Environment::base_env()["solve"];
-      weights = solve(gMat, moNorm);
-    } catch(const std::exception& e) {
-      // ignore
-    }
-    
-    if (weights != nullptr) {
-      if (is_true(any(weights < 0))) {
-        weights[weights < 0] = 0.0;
-        weights[weights > 0] = 1.0 / sum(weights > 0);
-        return weights[0] * g1 + weights[1] * g2 + weights[2] * g3;
-      } else {
-        return(moNorm);
-      }
-    } else {
+    if (abs(normAngle1 + normAngle2 + normAngle3 - 360) < precAngle) {
+      // norm is a convex combination of
+      // single-objective gradients
       return(moNorm);
+    } else {
+      // if the norm vector is not a convex combination,
+      // the MOG is pointing to one of the boundaries
+      // --> follow widest angle
+      double maxAngle = max(NumericVector::create(angle1, angle2, angle3));
+      if (angle1 == maxAngle) {
+        return(0.5 * (g1 + g2));
+      } else if (angle2 == maxAngle) {
+        return(0.5 * (g1 + g3));
+      } else {
+        return(0.5 * (g2 + g3));
+      }
     }
   } else {
     double maxAngle = max(NumericVector::create(angle1, angle2, angle3));
