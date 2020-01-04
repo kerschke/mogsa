@@ -3,6 +3,7 @@
 export(addGGArrows)
 export(addGGContour)
 export(addGGOptima)
+export(calculateMaxDisplayHeightCPP)
 export(calculateObjectiveValues)
 export(computeCumulatedPathLengths)
 export(computeGradientField)

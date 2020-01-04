@@ -202,6 +202,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// calculateMaxDisplayHeightCPP
+NumericVector calculateMaxDisplayHeightCPP(NumericMatrix centers, NumericVector heights, bool includeDiagonals);
+RcppExport SEXP _mogsa_calculateMaxDisplayHeightCPP(SEXP centersSEXP, SEXP heightsSEXP, SEXP includeDiagonalsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type centers(centersSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type heights(heightsSEXP);
+    Rcpp::traits::input_parameter< bool >::type includeDiagonals(includeDiagonalsSEXP);
+    rcpp_result_gen = Rcpp::wrap(calculateMaxDisplayHeightCPP(centers, heights, includeDiagonals));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mogsa_assureBoundsCPP", (DL_FUNC) &_mogsa_assureBoundsCPP, 4},
@@ -219,6 +232,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mogsa_getTriObjGradientCPP", (DL_FUNC) &_mogsa_getTriObjGradientCPP, 5},
     {"_mogsa_getBiObjGradientGridCPP", (DL_FUNC) &_mogsa_getBiObjGradientGridCPP, 4},
     {"_mogsa_getTriObjGradientGridCPP", (DL_FUNC) &_mogsa_getTriObjGradientGridCPP, 5},
+    {"_mogsa_calculateMaxDisplayHeightCPP", (DL_FUNC) &_mogsa_calculateMaxDisplayHeightCPP, 3},
     {NULL, NULL, 0}
 };
 

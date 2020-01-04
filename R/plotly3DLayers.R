@@ -1,5 +1,5 @@
 #' @export
-plotly3DLayers = function(x, fn, mode = "decision.space", max.quantile = 0.05, no.steps = 20, impute.zero = T) {
+plotly3DLayers = function(x, fn, mode = "decision.space", no.steps = 20, impute.zero = T) {
   # x: columns x1,x2,x3,height
   # if include.objectives, also y1,y2(,y3) are required
   # fn: smoof function, 3 dimensional decision space
@@ -16,16 +16,15 @@ plotly3DLayers = function(x, fn, mode = "decision.space", max.quantile = 0.05, n
     x$height = z
   }
   
-  x.boundaries = c()
+  maxh = calculateMaxDisplayHeightCPP(as.matrix(x[,1:3]), as.matrix(x[,4]), F)
+  min.height = min(maxh)
+  max.height = max(maxh[x$height <= min.height])
   
-  max.height = quantile(x$height, max.quantile)
+  x.boundaries = c()
   step.sizes = getStepSizes(x)
   
-  df.max = calculateMaxDisplayHeight(x, max.height, include.diagonals = F)
-  min.height = min(unlist(df.max$max.height))
-  
   for (height in seq(min.height, max.height, (max.height - min.height) / (no.steps - 1))) {
-    boundary = df.max[which(df.max$height <= height & df.max$max.height >= height),]
+    boundary = x[which(x$height <= height & maxh >= height),]
     
     boundary$frame = height
     x.boundaries = rbind(x.boundaries, boundary)
@@ -148,37 +147,4 @@ plotly3DLayersDecisionSpace = function(x, fn, marker.style, scene="scene") {
     frame = 1000,
     transition = 0
   )
-}
-
-calculateMaxDisplayHeight = function(df, max.height, include.diagonals = T) {
-  # points are "dominated" by their neighbours from some point on
-  # calculate this point here
-  
-  if (include.diagonals) {
-    deltas = expand.grid(list(-1:1,-1:1,-1:1))
-  } else {
-    deltas = as.data.frame(matrix(data = c(0,0,0,1,0,0,0,1,0,0,0,1,-1,0,0,0,-1,0,0,0,-1), ncol = 3, byrow=T))
-  }
-  
-  sorted.df = df[with(df, order(x3,x2,x1)),]
-  dims = apply(sorted.df[,c("x1","x2","x3")], 2, function(x) length(unique(x)))
-  
-  ids = which(sorted.df$height <= max.height)
-  indices = lapply(ids, function(id) convertCellID2IndicesCPP(id, dims))
-  
-  sorted.df$max.height = Inf
-  sorted.df[ids,]$max.height = lapply(indices, function(i) {
-    neighbour.heights = apply(deltas, 1, function(d) {
-      j = i+d
-      if (any(j <= 0) | any(j > dims)) {
-        Inf
-      } else {
-        id = convertIndices2CellIDCPP(j, dims)
-        sorted.df[id,"height"]
-      }
-    })
-    max(neighbour.heights)
-  })
-  
-  sorted.df[with(sorted.df, order(height, decreasing = T)),]
 }

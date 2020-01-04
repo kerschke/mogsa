@@ -61,3 +61,7 @@ getTriObjGradientGridCPP <- function(gradMat1, gradMat2, gradMat3, precNorm, pre
     .Call(`_mogsa_getTriObjGradientGridCPP`, gradMat1, gradMat2, gradMat3, precNorm, precAngle)
 }
 
+calculateMaxDisplayHeightCPP <- function(centers, heights, includeDiagonals) {
+    .Call(`_mogsa_calculateMaxDisplayHeightCPP`, centers, heights, includeDiagonals)
+}
+

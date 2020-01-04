@@ -765,3 +765,63 @@ NumericMatrix getTriObjGradientGridCPP(NumericMatrix gradMat1, NumericMatrix gra
   return moGradMat;
 }
 
+// [[Rcpp::export]]
+NumericVector calculateMaxDisplayHeightCPP(NumericMatrix centers, NumericVector heights, bool includeDiagonals) {
+  // points are "dominated" by their neighbours from some point on
+  // calculate this point here
+  int n = centers.nrow();
+  int d = centers.ncol();
+  NumericVector maxHeights(n);
+  
+  IntegerVector dims(d, 0);
+  for (int j = 0; j < d; j++) {
+    NumericVector ctr = centers(_,j);
+    ctr = unique(ctr);
+    dims[j] = ctr.size();
+  }
+  
+  IntegerMatrix deltas;
+  if (includeDiagonals) {
+    Rcpp::Function expandGrid("expand.grid");
+
+    IntegerVector v = IntegerVector::create(-1,0,1);
+    
+    DataFrame deltasDF = expandGrid(v, v, v);
+    IntegerMatrix deltas = internal::convert_using_rfunction(deltasDF, "as.matrix");
+  } else {
+    IntegerVector v = {0,0,0,1,0,0,0,1,0,0,0,1,-1,0,0,0,-1,0,0,0,-1};
+    v.attr("dim") = Dimension(3, 7);
+    deltas = as<IntegerMatrix>(v);
+    deltas = transpose(deltas);
+  }
+  
+  int nDeltas = deltas.nrow();
+  
+  IntegerVector indices;
+  IntegerVector neighbourIndices;
+  int neighbourID;
+  double maxNeighbour;
+  
+  for (int id = 1; id <= n; id++) {
+    indices = convertCellID2IndicesCPP(id, dims);
+    maxNeighbour = 0.0;
+    
+    for (int r = 0; r < nDeltas; r++) {
+      neighbourIndices = indices + deltas(r, _);
+      if (is_true(any(neighbourIndices < 1)) ||
+          is_true(any(neighbourIndices > dims))) {
+        // keep Infinity as maxHeight when at boundaries
+        maxNeighbour = std::numeric_limits<double>::infinity();
+        break;
+      }
+      
+      neighbourID = convertIndices2CellIDCPP(neighbourIndices, dims);
+      
+      maxNeighbour = std::max(maxNeighbour, heights(neighbourID-1));
+    }
+    
+    maxHeights(id-1) = maxNeighbour;
+  }
+  
+  return maxHeights;
+}
