@@ -86,9 +86,9 @@ plotly3DPareto = function(grid, fn, mode = "decision.space", impute.zero = T) {
 }
 
 #' @export
-nondominated = function(fnMat, dims) {
-  locallyNondom = locallyNondominatedCPP(fnMat, dims)
-  nondom = ecr::nondominated(t(fnMat[locallyNondom,]))
+nondominated = function(obj.space, dims) {
+  locallyNondom = locallyNondominatedCPP(obj.space, dims)
+  nondom = ecr::nondominated(t(obj.space[locallyNondom,]))
   
   locallyNondom[nondom]
 }
