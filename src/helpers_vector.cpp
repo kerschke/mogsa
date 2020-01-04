@@ -502,7 +502,7 @@ NumericMatrix gridBasedGradientCPP(NumericVector fnVec, IntegerVector dims, Nume
 
 
 // [[Rcpp::export]]
-NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm, bool fixDiagonals) {
+NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm, bool fixDiagonals, bool cumulateGradientLength) {
 // NumericVector cumulateHighDimensionalGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm) {
 
   // FIXME: so far, the code only supports 2D-problems
@@ -612,13 +612,20 @@ NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradient
         // sum of gradient lengths to the cells of the path
         for (int j = pathLength; j > 0; j--) {
           int index = path[j - 1];
+          double length;
+          
+          if (cumulateGradientLength) {
+            length = gradientLengths[index];
+          } else {
+            length = 1.0;
+          }
           
           if(fixDiagonals) {
             NumericVector delta = as<NumericVector>(findNextCellCPP(gradients(index,_)));
-            double stepLength = computeVectorLengthCPP(delta);
-            a += gradientLengths[index] * stepLength;
+            double stepSize = computeVectorLengthCPP(delta);
+            a += length * stepSize;
           } else {
-            a += gradientLengths[index];
+            a += length;
           }
           
           gradFieldVector[index] = a;

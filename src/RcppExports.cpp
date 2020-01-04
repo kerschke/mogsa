@@ -130,8 +130,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // cumulateGradientsCPP
-NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm, bool fixDiagonals);
-RcppExport SEXP _mogsa_cumulateGradientsCPP(SEXP centersSEXP, SEXP gradientsSEXP, SEXP precVectorLengthSEXP, SEXP precNormSEXP, SEXP fixDiagonalsSEXP) {
+NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm, bool fixDiagonals, bool cumulateGradientLength);
+RcppExport SEXP _mogsa_cumulateGradientsCPP(SEXP centersSEXP, SEXP gradientsSEXP, SEXP precVectorLengthSEXP, SEXP precNormSEXP, SEXP fixDiagonalsSEXP, SEXP cumulateGradientLengthSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -140,7 +140,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type precVectorLength(precVectorLengthSEXP);
     Rcpp::traits::input_parameter< double >::type precNorm(precNormSEXP);
     Rcpp::traits::input_parameter< bool >::type fixDiagonals(fixDiagonalsSEXP);
-    rcpp_result_gen = Rcpp::wrap(cumulateGradientsCPP(centers, gradients, precVectorLength, precNorm, fixDiagonals));
+    Rcpp::traits::input_parameter< bool >::type cumulateGradientLength(cumulateGradientLengthSEXP);
+    rcpp_result_gen = Rcpp::wrap(cumulateGradientsCPP(centers, gradients, precVectorLength, precNorm, fixDiagonals, cumulateGradientLength));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -227,7 +228,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mogsa_convertCellID2IndicesCPP", (DL_FUNC) &_mogsa_convertCellID2IndicesCPP, 2},
     {"_mogsa_locallyNondominatedCPP", (DL_FUNC) &_mogsa_locallyNondominatedCPP, 2},
     {"_mogsa_gridBasedGradientCPP", (DL_FUNC) &_mogsa_gridBasedGradientCPP, 5},
-    {"_mogsa_cumulateGradientsCPP", (DL_FUNC) &_mogsa_cumulateGradientsCPP, 5},
+    {"_mogsa_cumulateGradientsCPP", (DL_FUNC) &_mogsa_cumulateGradientsCPP, 6},
     {"_mogsa_getBiObjGradientCPP", (DL_FUNC) &_mogsa_getBiObjGradientCPP, 4},
     {"_mogsa_getTriObjGradientCPP", (DL_FUNC) &_mogsa_getTriObjGradientCPP, 5},
     {"_mogsa_getBiObjGradientGridCPP", (DL_FUNC) &_mogsa_getBiObjGradientGridCPP, 4},

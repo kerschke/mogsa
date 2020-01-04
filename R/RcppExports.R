@@ -41,8 +41,8 @@ gridBasedGradientCPP <- function(fnVec, dims, stepSizes, precNorm, precAngle) {
     .Call(`_mogsa_gridBasedGradientCPP`, fnVec, dims, stepSizes, precNorm, precAngle)
 }
 
-cumulateGradientsCPP <- function(centers, gradients, precVectorLength, precNorm, fixDiagonals) {
-    .Call(`_mogsa_cumulateGradientsCPP`, centers, gradients, precVectorLength, precNorm, fixDiagonals)
+cumulateGradientsCPP <- function(centers, gradients, precVectorLength, precNorm, fixDiagonals, cumulateGradientLength) {
+    .Call(`_mogsa_cumulateGradientsCPP`, centers, gradients, precVectorLength, precNorm, fixDiagonals, cumulateGradientLength)
 }
 
 getBiObjGradientCPP <- function(g1, g2, precNorm, precAngle) {
