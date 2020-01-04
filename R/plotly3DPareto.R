@@ -83,16 +83,16 @@ plotly3DPareto = function(x, fn, mode = "decision.space", impute.zero = T) {
       color = "red"
     ) %>% hide_guides()
   } else if (mode == "decision.space") {
-    plotly3DParetoDecisionSpace(x.nondom, fn) %>% layout(
+    plotly3DParetoDecisionSpace(x.nondom, fn, marker) %>% layout(
       scene = decision.scene
     )
   } else if (mode == "objective.space") {
     if (n == 3) {
-      plotly3DParetoObjectiveSpace(x.nondom, fn) %>% layout(
+      plotly3DParetoObjectiveSpace(x.nondom, fn, marker) %>% layout(
         scene = objective.scene
       )
     } else {
-      plotly3DScanObjectiveSpace(x.nondom, fn)
+      plotly3DScanObjectiveSpace(x.nondom, fn, marker)
     }
   }
   

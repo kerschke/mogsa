@@ -74,16 +74,16 @@ plotly3DScan = function(x, fn, mode = "decision.space", impute.zero = T) {
       frame = 5000
     )
   } else if (mode == "decision.space") {
-    plotly3DScanDecisionSpace(x,fn) %>% layout(
+    plotly3DScanDecisionSpace(x,fn, marker) %>% layout(
       scene = decision.scene
     )
   } else if (mode == "objective.space") {
     if (n == 3) {
-      plotly3DScanObjectiveSpace(x,fn) %>% layout(
+      plotly3DScanObjectiveSpace(x,fn, marker) %>% layout(
         scene = objective.scene
       )
     } else {
-      plotly3DScanObjectiveSpace(x,fn)
+      plotly3DScanObjectiveSpace(x,fn, marker)
     }
   }
   
