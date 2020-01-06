@@ -9,8 +9,9 @@ computeCumulatedPathLengths(
   gradients,
   prec.vector.length = 0.001,
   prec.norm = 1e-06,
-  check.data = TRUE,
-  fix.diagonals = FALSE
+  cumulate.gradient.length = TRUE,
+  fix.diagonals = FALSE,
+  check.data = TRUE
 )
 }
 \arguments{
