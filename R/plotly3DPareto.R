@@ -60,7 +60,7 @@ plotly3DPareto = function(grid, fn, mode = "decision.space", impute.zero = T) {
     }
     
     subplot(p.decision, p.objective) %>% layout(
-      title = "Decision and Objective Space",
+      title = paste("Decision and Objective Space of", smoof::getName(fn)),
       scene = decision.scene,
       scene2 = objective.scene
     ) %>% highlight(
@@ -98,7 +98,7 @@ plotly3DParetoObjectiveSpace = function(x, fn, marker.style, scene="scene") {
   
   if (n == 2) {
     plot_ly(data = x,
-            type="scatter",
+            type="scattergl",
             x=~y1,y=~y2,
             ids=ids,
             mode = "markers",

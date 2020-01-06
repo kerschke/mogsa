@@ -78,7 +78,7 @@ plotly3DLayers = function(grid, fn, mode = "decision.space", no.steps = 20, impu
     }
     
     subplot(p.decision, p.objective) %>% layout(
-      title = "Decision and Objective Space",
+      title = paste("Decision and Objective Space of", smoof::getName(fn)),
       scene = decision.scene,
       scene2 = objective.scene
     ) %>% highlight(
@@ -111,7 +111,7 @@ plotly3DLayersObjectiveSpace = function(x, fn, marker.style, scene="scene") {
   
   if (p == 2) {
     plot_ly(data = x,
-            type="scatter",
+            type="scattergl",
             x=~y1,y=~y2,
             frame=~frame,
             ids=~paste(x1,x2,x3),
