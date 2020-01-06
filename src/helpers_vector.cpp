@@ -398,7 +398,7 @@ IntegerVector locallyNondominatedCPP(NumericMatrix fnMat, IntegerVector dims) {
   List dimensionSteps;
   
   for (int dim = 0; dim < d; dim++) {
-    IntegerVector v = IntegerVector::create(-2,-1,0,1,2);
+    IntegerVector v = IntegerVector::create(-1,0,1);
     dimensionSteps.push_back(v);
   }
   
