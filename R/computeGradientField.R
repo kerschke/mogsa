@@ -90,6 +90,15 @@ computeGradientFieldGrid = function(grid, fn, prec.norm = 1e-6, prec.angle = 1e-
 }
 
 #' @export
+computeDivergenceGrid = function(gradients, dims, step.sizes, prec.norm = 1e-6, prec.angle = 1e-4) {
+  l = lapply(1:ncol(gradients), function(i) {
+    gridBasedGradientCPP(gradients[,i], dims, step.sizes, prec.norm, prec.angle)[,i]
+  })
+  
+  Reduce('+', l)
+}
+
+#' @export
 genericMOGradient = function(G, prec.norm = 1e-6) {
   normalizeVectorCPP(pracma::qpspecial(G)$d, prec.norm)
 }
