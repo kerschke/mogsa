@@ -11,24 +11,24 @@ plotly2DHeatmap = function(grid, fn, mode = "decision.space", impute.zero = T) {
     grid$height = imputeZero(grid$height)
   }
   
+  x = cbind.data.frame(grid$dec.space, grid$height, grid$obj.space)
+  x = x[order(x$height, decreasing=T),] # relevant for obj.space
+  
   if (n == 3) {
     objective.scene = list(
       aspectmode='cube',
-      xaxis = list(range = c(min(x.nondom[,'y1']),max(x.nondom[,'y1'])), title='y₁'),
-      yaxis = list(range = c(min(x.nondom[,'y2']),max(x.nondom[,'y2'])), title='y₂'),
-      zaxis = list(range = c(min(x.nondom[,'y3']),max(x.nondom[,'y3'])), title='y₃')
+      xaxis = list(range = c(min(x[,'y1']),max(x[,'y1'])), title='y₁'),
+      yaxis = list(range = c(min(x[,'y2']),max(x[,'y2'])), title='y₂'),
+      zaxis = list(range = c(min(x[,'y3']),max(x[,'y3'])), title='y₃')
     )
   }
-  
-  x = cbind.data.frame(grid$dec.space, grid$height, grid$obj.space)
-  x = x[order(x$height, decreasing=F),] # relevant for obj.space
   
   marker = plotlyMarker(grid)
   
   if (mode == "both") {
     x.shared = highlight_key(x)
     p.decision = plotly2DHeatmapDecisionSpace(x.shared, fn, marker)
-    p.objective = plotly2DHeatmapObjectiveSpace(x.shared, fn, marker)
+    p.objective = plotly2DHeatmapObjectiveSpace(x.shared, fn, marker, scene="scene")
     
     domain.left = list(
       x=c(0,0.5),
@@ -48,8 +48,7 @@ plotly2DHeatmap = function(grid, fn, mode = "decision.space", impute.zero = T) {
     
     subplot(p.decision, p.objective) %>% layout(
       title = paste("Decision and Objective Space of", smoof::getName(fn)),
-      scene = decision.scene,
-      scene2 = objective.scene
+      scene = objective.scene
     ) %>% highlight(
       on="plotly_click",
       off="plotly_deselect",
@@ -58,7 +57,6 @@ plotly2DHeatmap = function(grid, fn, mode = "decision.space", impute.zero = T) {
     ) %>% hide_guides()
   } else if (mode == "decision.space") {
     plotly2DHeatmapDecisionSpace(x, fn, marker) %>%
-      toWebGL() %>%
       hide_guides()
   } else if (mode == "objective.space") {
     if (n == 3) {
@@ -72,12 +70,12 @@ plotly2DHeatmap = function(grid, fn, mode = "decision.space", impute.zero = T) {
   
 }
 
-plotly2DHeatmapObjectiveSpace = function(x, fn, marker.style) {
+plotly2DHeatmapObjectiveSpace = function(x, fn, marker.style, scene="scene") {
   n = smoof::getNumberOfObjectives(fn)
   
   if (n == 2) {
     plot_ly(data = x,
-            type="scattergl",
+            type="scatter",
             x=~y1,y=~y2,
             mode = "markers",
             marker = marker.style
@@ -98,5 +96,15 @@ plotly2DHeatmapDecisionSpace = function(x, fn, marker.style) {
           type="heatmap",
           x=~x1,y=~x2,z=~log(height),
           colorscale=plotlyColorscale()
+  ) %>% layout(
+    xaxis = list(
+      title = "x_1",
+      constrain = "domain"
+    ),
+    yaxis = list(
+      scaleanchor = "x",
+      title = "x_2",
+      constrain = "domain"
+    )
   )
 }

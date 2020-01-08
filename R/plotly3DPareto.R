@@ -79,7 +79,7 @@ plotly3DPareto = function(grid, fn, mode = "decision.space", impute.zero = T) {
         scene = objective.scene
       )
     } else {
-      plotly3DScanObjectiveSpace(x.nondom, fn, marker)
+      plotly3DParetoObjectiveSpace(x.nondom, fn, marker)
     }
   }
   
@@ -87,7 +87,7 @@ plotly3DPareto = function(grid, fn, mode = "decision.space", impute.zero = T) {
 
 #' @export
 nondominated = function(obj.space, dims) {
-  locallyNondom = locallyNondominatedCPP(obj.space, dims)
+  locallyNondom = locallyNondominatedCPP(obj.space, dims, TRUE)
   nondom = ecr::nondominated(t(obj.space[locallyNondom,]))
   
   locallyNondom[nondom]
@@ -98,9 +98,8 @@ plotly3DParetoObjectiveSpace = function(x, fn, marker.style, scene="scene") {
   
   if (n == 2) {
     plot_ly(data = x,
-            type="scattergl",
+            type="scatter",
             x=~y1,y=~y2,
-            ids=ids,
             mode = "markers",
             marker = marker.style
     )

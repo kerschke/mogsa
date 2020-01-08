@@ -98,14 +98,15 @@ plotly3DScanObjectiveSpace = function(x, fn, marker.style, frame="x3", scene="sc
   
   if (n == 2) {
     plot_ly(data = x,
-            type="scattergl",
+            type="scatter",
             x=~y1,y=~y2,
             ids=ids,
             frame=frame,
             mode = "markers",
             marker=marker.style
     ) %>% animation_opts(
-      frame = 1000
+      frame = 1000,
+      transition = 0
     )
   } else if (n == 3) {
     plot_ly(data = x,
@@ -117,7 +118,8 @@ plotly3DScanObjectiveSpace = function(x, fn, marker.style, frame="x3", scene="sc
             mode = "markers",
             marker=marker.style
     ) %>% animation_opts(
-      frame = 1000
+      frame = 1000,
+      transition = 0
     )
   }
 }

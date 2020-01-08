@@ -111,7 +111,7 @@ plotly3DLayersObjectiveSpace = function(x, fn, marker.style, scene="scene") {
   
   if (p == 2) {
     plot_ly(data = x,
-            type="scattergl",
+            type="scatter",
             x=~y1,y=~y2,
             frame=~frame,
             ids=~paste(x1,x2,x3),
