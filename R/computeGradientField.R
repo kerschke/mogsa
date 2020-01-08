@@ -90,7 +90,11 @@ computeGradientFieldGrid = function(grid, fn, prec.norm = 1e-6, prec.angle = 1e-
 }
 
 #' @export
-computeDivergenceGrid = function(gradients, dims, step.sizes, prec.norm = 1e-6, prec.angle = 1e-4) {
+computeDivergenceGrid = function(gradients, dims, step.sizes, prec.norm = 1e-6, prec.angle = 1e-4, normalize = F) {
+  if (normalize) {
+    gradients = normalizeMatrixRowsCPP(gradients, prec.norm)
+  }
+  
   l = lapply(1:ncol(gradients), function(i) {
     gridBasedGradientCPP(gradients[,i], dims, step.sizes, prec.norm, prec.angle)[,i]
   })
