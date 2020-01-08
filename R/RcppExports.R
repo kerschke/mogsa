@@ -17,6 +17,10 @@ normalizeVectorCPP <- function(vec, prec) {
     .Call(`_mogsa_normalizeVectorCPP`, vec, prec)
 }
 
+normalizeMatrixRowsCPP <- function(mat, prec) {
+    .Call(`_mogsa_normalizeMatrixRowsCPP`, mat, prec)
+}
+
 computeAngleCPP <- function(vec1, vec2, prec) {
     .Call(`_mogsa_computeAngleCPP`, vec1, vec2, prec)
 }
@@ -33,8 +37,9 @@ convertCellID2IndicesCPP <- function(cellID, dims) {
     .Call(`_mogsa_convertCellID2IndicesCPP`, cellID, dims)
 }
 
-locallyNondominatedCPP <- function(fnMat, dims) {
-    .Call(`_mogsa_locallyNondominatedCPP`, fnMat, dims)
+#' @export
+locallyNondominatedCPP <- function(fnMat, dims, includeDiagonals) {
+    .Call(`_mogsa_locallyNondominatedCPP`, fnMat, dims, includeDiagonals)
 }
 
 gridBasedGradientCPP <- function(fnVec, dims, stepSizes, precNorm, precAngle) {

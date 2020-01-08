@@ -85,6 +85,17 @@ NumericVector normalizeVectorCPP(NumericVector vec, double prec) {
 }
 
 // [[Rcpp::export]]
+NumericMatrix normalizeMatrixRowsCPP(NumericMatrix mat, double prec) {
+  mat = clone(mat);
+  
+  for (int i = 0; i < mat.nrow(); i++) {
+    mat(i,_) = normalizeVectorCPP(mat(i,_), prec);
+  }
+  
+  return mat;
+}
+
+// [[Rcpp::export]]
 double computeAngleCPP(NumericVector vec1, NumericVector vec2, double prec) {
   // computes angle spanned by vectors vec1 and vec2
   // prec = max absolute difference (per element) between the vectors
@@ -387,23 +398,39 @@ IntegerVector convertCellID2IndicesCPP(int cellID, IntegerVector dims) {
 //   return gradFieldVector;
 // }
 
+//' @export
 // [[Rcpp::export]]
-IntegerVector locallyNondominatedCPP(NumericMatrix fnMat, IntegerVector dims) {
+IntegerVector locallyNondominatedCPP(NumericMatrix fnMat, IntegerVector dims, bool includeDiagonals) {
   int n = fnMat.nrow();
   int d = dims.size();
   
   IntegerVector locallyNondominated;
   
-  Rcpp::Function expandGrid("expand.grid");
-  List dimensionSteps;
+  IntegerMatrix deltas;
   
-  for (int dim = 0; dim < d; dim++) {
+  if (includeDiagonals) {
+    Rcpp::Function expandGrid("expand.grid");
+    
     IntegerVector v = IntegerVector::create(-1,0,1);
-    dimensionSteps.push_back(v);
+    
+    DataFrame deltasDF = expandGrid(v, v, v);
+    deltas = internal::convert_using_rfunction(deltasDF, "as.matrix");
+  } else {
+    IntegerMatrix tmp(3 * d, d);
+    IntegerVector base(d);
+    int cnt = 0;
+    
+    for (int i = 0; i < d; i++) {
+      for (int step = -1; step <= 1; step++) {
+        IntegerVector v = clone(base);
+        v(i) = step;
+        tmp(cnt++,_) = v;
+      }
+    }
+    
+    deltas = tmp;
   }
   
-  DataFrame deltasDF = expandGrid(dimensionSteps);
-  IntegerMatrix deltas = internal::convert_using_rfunction(deltasDF, "as.matrix");
   int nDeltas = deltas.nrow();
   
   // helper

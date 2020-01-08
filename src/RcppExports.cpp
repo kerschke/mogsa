@@ -54,6 +54,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// normalizeMatrixRowsCPP
+NumericMatrix normalizeMatrixRowsCPP(NumericMatrix mat, double prec);
+RcppExport SEXP _mogsa_normalizeMatrixRowsCPP(SEXP matSEXP, SEXP precSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< double >::type prec(precSEXP);
+    rcpp_result_gen = Rcpp::wrap(normalizeMatrixRowsCPP(mat, prec));
+    return rcpp_result_gen;
+END_RCPP
+}
 // computeAngleCPP
 double computeAngleCPP(NumericVector vec1, NumericVector vec2, double prec);
 RcppExport SEXP _mogsa_computeAngleCPP(SEXP vec1SEXP, SEXP vec2SEXP, SEXP precSEXP) {
@@ -103,14 +115,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // locallyNondominatedCPP
-IntegerVector locallyNondominatedCPP(NumericMatrix fnMat, IntegerVector dims);
-RcppExport SEXP _mogsa_locallyNondominatedCPP(SEXP fnMatSEXP, SEXP dimsSEXP) {
+IntegerVector locallyNondominatedCPP(NumericMatrix fnMat, IntegerVector dims, bool includeDiagonals);
+RcppExport SEXP _mogsa_locallyNondominatedCPP(SEXP fnMatSEXP, SEXP dimsSEXP, SEXP includeDiagonalsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type fnMat(fnMatSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
-    rcpp_result_gen = Rcpp::wrap(locallyNondominatedCPP(fnMat, dims));
+    Rcpp::traits::input_parameter< bool >::type includeDiagonals(includeDiagonalsSEXP);
+    rcpp_result_gen = Rcpp::wrap(locallyNondominatedCPP(fnMat, dims, includeDiagonals));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -222,11 +235,12 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mogsa_crossProductCPP", (DL_FUNC) &_mogsa_crossProductCPP, 2},
     {"_mogsa_computeVectorLengthCPP", (DL_FUNC) &_mogsa_computeVectorLengthCPP, 1},
     {"_mogsa_normalizeVectorCPP", (DL_FUNC) &_mogsa_normalizeVectorCPP, 2},
+    {"_mogsa_normalizeMatrixRowsCPP", (DL_FUNC) &_mogsa_normalizeMatrixRowsCPP, 2},
     {"_mogsa_computeAngleCPP", (DL_FUNC) &_mogsa_computeAngleCPP, 3},
     {"_mogsa_findNextCellCPP", (DL_FUNC) &_mogsa_findNextCellCPP, 1},
     {"_mogsa_convertIndices2CellIDCPP", (DL_FUNC) &_mogsa_convertIndices2CellIDCPP, 2},
     {"_mogsa_convertCellID2IndicesCPP", (DL_FUNC) &_mogsa_convertCellID2IndicesCPP, 2},
-    {"_mogsa_locallyNondominatedCPP", (DL_FUNC) &_mogsa_locallyNondominatedCPP, 2},
+    {"_mogsa_locallyNondominatedCPP", (DL_FUNC) &_mogsa_locallyNondominatedCPP, 3},
     {"_mogsa_gridBasedGradientCPP", (DL_FUNC) &_mogsa_gridBasedGradientCPP, 5},
     {"_mogsa_cumulateGradientsCPP", (DL_FUNC) &_mogsa_cumulateGradientsCPP, 6},
     {"_mogsa_getBiObjGradientCPP", (DL_FUNC) &_mogsa_getBiObjGradientCPP, 4},
