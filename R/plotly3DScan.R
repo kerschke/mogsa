@@ -18,8 +18,7 @@ plotly3DScan = function(grid, fn, mode = "decision.space", impute.zero = T) {
     zaxis = list(range = c(lower[3],upper[3]), title='x₃')
   )
   
-  x = cbind(grid$dec.space, grid$height, grid$obj.space)
-  x = as.data.frame(x)
+  x = cbind.data.frame(grid$dec.space, grid$height, grid$obj.space)
   
   if (n == 3) {
     objective.scene = list(
@@ -34,7 +33,10 @@ plotly3DScan = function(grid, fn, mode = "decision.space", impute.zero = T) {
   
   if (mode == "both") {
     x.shared = highlight_key(x)
-    p.decision = plotly3DScanDecisionSpace(x.shared, fn, marker, scene="scene")
+    p.decision = plotly3DScanDecisionSpace(x.shared, fn, marker, scene="scene") %>% layout(
+      xaxis = list(range = c(min(x$y1),max(x$y1)), title='y₁'),
+      yaxis = list(range = c(min(x$y2),max(x$y2)), title='y₂')
+    )
     p.objective = plotly3DScanObjectiveSpace(x.shared, fn, marker, scene="scene2")
     
     domain.left = list(
@@ -76,7 +78,10 @@ plotly3DScan = function(grid, fn, mode = "decision.space", impute.zero = T) {
         scene = objective.scene
       )
     } else {
-      plotly3DScanObjectiveSpace(x,fn, marker)
+      plotly3DScanObjectiveSpace(x,fn, marker) %>% layout(
+        xaxis = list(range = c(min(x$y1),max(x$y1)), title='y₁'),
+        yaxis = list(range = c(min(x$y2),max(x$y2)), title='y₂')
+      )
     }
   }
   
