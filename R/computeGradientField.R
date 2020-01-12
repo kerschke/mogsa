@@ -104,7 +104,9 @@ computeDivergenceGrid = function(gradients, dims, step.sizes, prec.norm = 1e-6, 
 
 #' @export
 genericMOGradient = function(G, prec.norm = 1e-6) {
-  normalizeVectorCPP(pracma::qpspecial(G)$d, prec.norm)
+  # usage: e.g. genericMOGradient(cbind(c(1,0,0), c(0,1,0), rep(sqrt(1/3), 3)))
+  G = t(normalizeMatrixRowsCPP(t(G), prec.norm))
+  pracma::qpspecial(G)$d
 }
 
 calcMOGradient = function(ind, fn, prec.grad, prec.norm, prec.angle) {
