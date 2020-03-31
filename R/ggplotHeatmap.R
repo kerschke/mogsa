@@ -83,7 +83,7 @@ ggplotHeatmap = function(df, var1 = "x1", var2 = "x2", log.scale = TRUE, impute.
   }
   ## create the heatmap (colored tiles)
   g = ggplot() + 
-    geom_tile(data = df, mapping = aes_string(x = var1, y = var2, fill = "height"), ...)
+    geom_raster(data = df, mapping = aes_string(x = var1, y = var2, fill = "height"), ...)
 
   if (log.scale) {
     ## if results are shown on log-scale, provide a 'pretty' height scale
