@@ -105,6 +105,56 @@ computeDivergenceGrid = function(gradients, dims, step.sizes, prec.norm = 1e-6, 
 }
 
 #' @export
+computeSecondOrderGrid = function(gradients, dims, step.sizes, prec.norm = 1e-6, prec.angle = 1e-4, normalize = F, epsilon=1e-2, get.matrix = T) {
+  if (normalize) {
+    gradients = normalizeMatrixRowsCPP(gradients, prec.norm)
+  }
+  
+  if (length(dims) != 2) return()
+  
+  l = lapply(1:ncol(gradients), function(i) {
+    gridBasedGradientCPP(gradients[,i], dims, rep(1, length(dims)), prec.norm, prec.angle)
+  })
+  
+  # h = sapply(1:nrow(gradients), function(i) {
+  #   det = l[[1]][i, 1] * l[[2]][i, 2] - l[[1]][i, 2] * l[[2]][i, 1]
+  #   if (det > epsilon && l[[1]][i, 1] + l[[2]][i, 2] > 0) {
+  #     # "local minimum" second order condition
+  #     return(-1)
+  #   } else if (det > epsilon && l[[1]][i, 1] + l[[2]][i, 2] < 0) {
+  #     # "local maximum" second order condition
+  #     return(1)
+  #   } else if (det < -epsilon) {
+  #     # saddle point (det < 0)
+  #     if (l[[1]][i, 1] + l[[2]][i, 2] > 0) {
+  #       return(0) # might be interesting to look at?
+  #     } else {
+  #       return(0)
+  #     }
+  #   } else {
+  #     # det is (approx.) zero
+  #     # test is inconclusive
+  #     return(0)
+  #   }
+  # })
+  
+  if (get.matrix) {
+    j = sapply(1:nrow(gradients), function(i) {
+      matrix(c(l[[1]][i, 1], l[[1]][i, 2], l[[2]][i, 1], l[[2]][i, 2]), nrow = 2, ncol = 2, byrow=T)
+    })
+    return(t(j))
+  } else {
+    j = sapply(1:nrow(gradients), function(i) {
+      H = matrix(c(l[[1]][i, 1], l[[1]][i, 2], l[[2]][i, 1], l[[2]][i, 2]), nrow = 2, ncol = 2, byrow=T)
+      
+      Re(eigen(H)$values)
+    })
+    return(t(j))
+  }
+}
+
+
+#' @export
 genericMOGradient = function(G, prec.norm = 1e-6) {
   # usage: e.g. genericMOGradient(cbind(c(1,0,0), c(0,1,0), rep(sqrt(1/3), 3)))
   G = t(normalizeMatrixRowsCPP(t(G), prec.norm))

@@ -10,6 +10,40 @@ ggplotDivergence = function(grid) {
   )
 }
 
+#' @export
+ggplotSecondOrder = function(grid, with.heatmap = F) {
+  divergence = cbind.data.frame(grid$dec.space, div=grid$div)
+  
+  if (with.heatmap) {
+    ggplotHeatmap(
+      cbind.data.frame(grid$dec.space, grid$height),
+      minimalistic.image = T
+    ) + geom_tile(aes(x1, x2, fill=div, alpha=ifelse(is.na(div), 0, 1), width = grid$step.sizes[1], height=grid$step.sizes[2]),
+                  data = divergence
+    )
+  } else {
+    mins = apply(grid$dec.space, 2, min)
+    maxs = apply(grid$dec.space, 2, max)
+    ggplot(divergence) +
+      xlim(mins[1], maxs[1]) +
+      ylim(mins[2], maxs[2]) +
+      geom_tile(aes(x1, x2, fill=div, alpha=ifelse(is.na(div), 0, 1), width = grid$step.sizes[1], height=grid$step.sizes[2])) +
+      theme_minimal() +
+      theme(legend.position = "none",
+            axis.text = element_blank(),
+            axis.title = element_blank(),
+            panel.grid = element_blank()
+      )
+  }
+}
+
+#' @export
+ggplotHesse = function(grid) {
+  locallyNondominatedCPP() 
+  
+  divergence = cbind.data.frame(grid$dec.space[grid$div != 0,], div=grid$div[grid$div != 0])
+}
+
 # efficient = locallyNondominatedCPP(as.matrix(grid$height), grid$dims, T)
 # quant = which(grid$height < quantile(grid$height, probs=c(0.05)))
 
