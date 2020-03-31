@@ -53,7 +53,9 @@ test.functions = list(
   smoof::makeMMF10Function(),
   smoof::makeMMF6Function(),
   mpm2.fn,
-  smoof::makeViennetFunction()
+  smoof::makeBiObjBBOBFunction(2, 10, 1),
+  smoof::makeViennetFunction(),
+  smoof::makeDTLZ3Function(3, 2)
 )
 
 test.function.ids = as.list(1:length(test.functions))
