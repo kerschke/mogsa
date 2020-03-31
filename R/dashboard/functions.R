@@ -9,6 +9,24 @@ test.2d.2d = smoof::makeMultiObjectiveFunction(name = "2D->2D Test Function", id
 test.2d.3d = smoof::makeMultiObjectiveFunction(name = "2D->3D Test Function", id = "", description = "", fn = f_2d3d,
                                                par.set = ParamHelpers::makeNumericParamSet(len = 2, lower = c(-2,-1), upper = c(2,3)))
 
+f_noglobal = function(i) {
+  x = i[1]
+  y = i[2]
+  
+  x1 = -exp(0.2*(-(x+3)**2-(y-3)**2)) -exp(0.2*(-(x-3)**2-(y+3)**2)) + exp(-(2*x-y)**2)
+  x2 = -exp(0.2*(-(x-3)**2-(y-3)**2)) -exp(0.2*(-(x+3)**2-(y+3)**2)) + exp(-(x+2*y)**2)
+  
+  c(x1, x2)
+}
+
+test.multitrap = smoof::makeMultiObjectiveFunction(name = "Multi-set Trap", id = "", description = "", fn = f_noglobal,
+                                                  par.set = ParamHelpers::makeNumericParamSet(len = 2, lower = c(-5,-5), upper = c(5,5)))
+test.multitrap.1 = smoof::makeMultiObjectiveFunction(name = "Multi-set Trap - Function 1", id = "", description = "", fn = function(x){f_noglobal(x)[1]},
+                                                    par.set = ParamHelpers::makeNumericParamSet(len = 2, lower = c(-5,-5), upper = c(5,5)))
+test.multitrap.2 = smoof::makeMultiObjectiveFunction(name = "Multi-set Trap - Function 2", id = "", description = "", fn = function(x){f_noglobal(x)[2]},
+                                                    par.set = ParamHelpers::makeNumericParamSet(len = 2, lower = c(-5,-5), upper = c(5,5)))
+fn = test.multitrap
+
 f1_2 = function(x) (x[1]**4 - 2*x[1]**2 + x[2]**2 + 1 + x[3] ** 2)
 f2_2 = function(x) ((x[1] + 0.5)**2 + (x[2]-2)**2 + (x[3] - 1) ** 4)
 f3_2 = function(x) (x[1] ** 4 + 3 * (x[2] - 1) ** 2 + (x[3] - 1) ** 2)
