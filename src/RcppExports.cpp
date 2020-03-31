@@ -114,6 +114,106 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rotate90Right2D
+NumericVector rotate90Right2D(NumericVector v);
+RcppExport SEXP _mogsa_rotate90Right2D(SEXP vSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type v(vSEXP);
+    rcpp_result_gen = Rcpp::wrap(rotate90Right2D(v));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rotate90Left2D
+NumericVector rotate90Left2D(NumericVector v);
+RcppExport SEXP _mogsa_rotate90Left2D(SEXP vSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type v(vSEXP);
+    rcpp_result_gen = Rcpp::wrap(rotate90Left2D(v));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getMODescentRange2D
+List getMODescentRange2D(NumericVector a, NumericVector b);
+RcppExport SEXP _mogsa_getMODescentRange2D(SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type a(aSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(getMODescentRange2D(a, b));
+    return rcpp_result_gen;
+END_RCPP
+}
+// imputeBoundary
+NumericMatrix imputeBoundary(NumericMatrix moGradMat, List gradMatList, IntegerVector dims);
+RcppExport SEXP _mogsa_imputeBoundary(SEXP moGradMatSEXP, SEXP gradMatListSEXP, SEXP dimsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type moGradMat(moGradMatSEXP);
+    Rcpp::traits::input_parameter< List >::type gradMatList(gradMatListSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    rcpp_result_gen = Rcpp::wrap(imputeBoundary(moGradMat, gradMatList, dims));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getCriticalPointsCellCPP
+List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, NumericVector div, IntegerVector dims);
+RcppExport SEXP _mogsa_getCriticalPointsCellCPP(SEXP moGradMatSEXP, SEXP gradMatListSEXP, SEXP divSEXP, SEXP dimsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type moGradMat(moGradMatSEXP);
+    Rcpp::traits::input_parameter< List >::type gradMatList(gradMatListSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type div(divSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    rcpp_result_gen = Rcpp::wrap(getCriticalPointsCellCPP(moGradMat, gradMatList, div, dims));
+    return rcpp_result_gen;
+END_RCPP
+}
+// connectedComponentsGrid
+IntegerVector connectedComponentsGrid(IntegerVector ids, IntegerVector dims);
+RcppExport SEXP _mogsa_connectedComponentsGrid(SEXP idsSEXP, SEXP dimsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type ids(idsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    rcpp_result_gen = Rcpp::wrap(connectedComponentsGrid(ids, dims));
+    return rcpp_result_gen;
+END_RCPP
+}
+// integrateVectorField
+List integrateVectorField(NumericMatrix gradMat, IntegerVector dims, IntegerVector sinks);
+RcppExport SEXP _mogsa_integrateVectorField(SEXP gradMatSEXP, SEXP dimsSEXP, SEXP sinksSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type gradMat(gradMatSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type sinks(sinksSEXP);
+    rcpp_result_gen = Rcpp::wrap(integrateVectorField(gradMat, dims, sinks));
+    return rcpp_result_gen;
+END_RCPP
+}
+// integrateBackwards
+IntegerVector integrateBackwards(NumericMatrix gradMat, IntegerVector dims, int startID, IntegerVector stopCells);
+RcppExport SEXP _mogsa_integrateBackwards(SEXP gradMatSEXP, SEXP dimsSEXP, SEXP startIDSEXP, SEXP stopCellsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type gradMat(gradMatSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    Rcpp::traits::input_parameter< int >::type startID(startIDSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type stopCells(stopCellsSEXP);
+    rcpp_result_gen = Rcpp::wrap(integrateBackwards(gradMat, dims, startID, stopCells));
+    return rcpp_result_gen;
+END_RCPP
+}
 // locallyNondominatedCPP
 IntegerVector locallyNondominatedCPP(NumericMatrix fnMat, IntegerVector dims, bool includeDiagonals);
 RcppExport SEXP _mogsa_locallyNondominatedCPP(SEXP fnMatSEXP, SEXP dimsSEXP, SEXP includeDiagonalsSEXP) {
@@ -124,6 +224,31 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
     Rcpp::traits::input_parameter< bool >::type includeDiagonals(includeDiagonalsSEXP);
     rcpp_result_gen = Rcpp::wrap(locallyNondominatedCPP(fnMat, dims, includeDiagonals));
+    return rcpp_result_gen;
+END_RCPP
+}
+// changeOfSignCPP
+IntegerVector changeOfSignCPP(NumericVector fnVec, IntegerVector dims, bool includeDiagonals);
+RcppExport SEXP _mogsa_changeOfSignCPP(SEXP fnVecSEXP, SEXP dimsSEXP, SEXP includeDiagonalsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type fnVec(fnVecSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    Rcpp::traits::input_parameter< bool >::type includeDiagonals(includeDiagonalsSEXP);
+    rcpp_result_gen = Rcpp::wrap(changeOfSignCPP(fnVec, dims, includeDiagonals));
+    return rcpp_result_gen;
+END_RCPP
+}
+// changeOfBasin
+IntegerVector changeOfBasin(IntegerVector basins, IntegerVector dims);
+RcppExport SEXP _mogsa_changeOfBasin(SEXP basinsSEXP, SEXP dimsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type basins(basinsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    rcpp_result_gen = Rcpp::wrap(changeOfBasin(basins, dims));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -142,19 +267,33 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// hessian
+NumericMatrix hessian(NumericVector fnVec, IntegerVector dims, NumericVector stepSizes);
+RcppExport SEXP _mogsa_hessian(SEXP fnVecSEXP, SEXP dimsSEXP, SEXP stepSizesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type fnVec(fnVecSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type stepSizes(stepSizesSEXP);
+    rcpp_result_gen = Rcpp::wrap(hessian(fnVec, dims, stepSizes));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cumulateGradientsCPP
-NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm, bool fixDiagonals, bool cumulateGradientLength);
-RcppExport SEXP _mogsa_cumulateGradientsCPP(SEXP centersSEXP, SEXP gradientsSEXP, SEXP precVectorLengthSEXP, SEXP precNormSEXP, SEXP fixDiagonalsSEXP, SEXP cumulateGradientLengthSEXP) {
+List cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, IntegerVector stopCells, double precVectorLength, double precNorm, bool fixDiagonals, bool cumulateGradientLength);
+RcppExport SEXP _mogsa_cumulateGradientsCPP(SEXP centersSEXP, SEXP gradientsSEXP, SEXP stopCellsSEXP, SEXP precVectorLengthSEXP, SEXP precNormSEXP, SEXP fixDiagonalsSEXP, SEXP cumulateGradientLengthSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type centers(centersSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type gradients(gradientsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type stopCells(stopCellsSEXP);
     Rcpp::traits::input_parameter< double >::type precVectorLength(precVectorLengthSEXP);
     Rcpp::traits::input_parameter< double >::type precNorm(precNormSEXP);
     Rcpp::traits::input_parameter< bool >::type fixDiagonals(fixDiagonalsSEXP);
     Rcpp::traits::input_parameter< bool >::type cumulateGradientLength(cumulateGradientLengthSEXP);
-    rcpp_result_gen = Rcpp::wrap(cumulateGradientsCPP(centers, gradients, precVectorLength, precNorm, fixDiagonals, cumulateGradientLength));
+    rcpp_result_gen = Rcpp::wrap(cumulateGradientsCPP(centers, gradients, stopCells, precVectorLength, precNorm, fixDiagonals, cumulateGradientLength));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -240,9 +379,20 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mogsa_findNextCellCPP", (DL_FUNC) &_mogsa_findNextCellCPP, 1},
     {"_mogsa_convertIndices2CellIDCPP", (DL_FUNC) &_mogsa_convertIndices2CellIDCPP, 2},
     {"_mogsa_convertCellID2IndicesCPP", (DL_FUNC) &_mogsa_convertCellID2IndicesCPP, 2},
+    {"_mogsa_rotate90Right2D", (DL_FUNC) &_mogsa_rotate90Right2D, 1},
+    {"_mogsa_rotate90Left2D", (DL_FUNC) &_mogsa_rotate90Left2D, 1},
+    {"_mogsa_getMODescentRange2D", (DL_FUNC) &_mogsa_getMODescentRange2D, 2},
+    {"_mogsa_imputeBoundary", (DL_FUNC) &_mogsa_imputeBoundary, 3},
+    {"_mogsa_getCriticalPointsCellCPP", (DL_FUNC) &_mogsa_getCriticalPointsCellCPP, 4},
+    {"_mogsa_connectedComponentsGrid", (DL_FUNC) &_mogsa_connectedComponentsGrid, 2},
+    {"_mogsa_integrateVectorField", (DL_FUNC) &_mogsa_integrateVectorField, 3},
+    {"_mogsa_integrateBackwards", (DL_FUNC) &_mogsa_integrateBackwards, 4},
     {"_mogsa_locallyNondominatedCPP", (DL_FUNC) &_mogsa_locallyNondominatedCPP, 3},
+    {"_mogsa_changeOfSignCPP", (DL_FUNC) &_mogsa_changeOfSignCPP, 3},
+    {"_mogsa_changeOfBasin", (DL_FUNC) &_mogsa_changeOfBasin, 2},
     {"_mogsa_gridBasedGradientCPP", (DL_FUNC) &_mogsa_gridBasedGradientCPP, 5},
-    {"_mogsa_cumulateGradientsCPP", (DL_FUNC) &_mogsa_cumulateGradientsCPP, 6},
+    {"_mogsa_hessian", (DL_FUNC) &_mogsa_hessian, 3},
+    {"_mogsa_cumulateGradientsCPP", (DL_FUNC) &_mogsa_cumulateGradientsCPP, 7},
     {"_mogsa_getBiObjGradientCPP", (DL_FUNC) &_mogsa_getBiObjGradientCPP, 4},
     {"_mogsa_getTriObjGradientCPP", (DL_FUNC) &_mogsa_getTriObjGradientCPP, 5},
     {"_mogsa_getBiObjGradientGridCPP", (DL_FUNC) &_mogsa_getBiObjGradientGridCPP, 4},

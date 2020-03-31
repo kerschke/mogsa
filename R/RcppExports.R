@@ -17,6 +17,7 @@ normalizeVectorCPP <- function(vec, prec) {
     .Call(`_mogsa_normalizeVectorCPP`, vec, prec)
 }
 
+#' @export
 normalizeMatrixRowsCPP <- function(mat, prec) {
     .Call(`_mogsa_normalizeMatrixRowsCPP`, mat, prec)
 }
@@ -38,16 +39,71 @@ convertCellID2IndicesCPP <- function(cellID, dims) {
 }
 
 #' @export
+rotate90Right2D <- function(v) {
+    .Call(`_mogsa_rotate90Right2D`, v)
+}
+
+#' @export
+rotate90Left2D <- function(v) {
+    .Call(`_mogsa_rotate90Left2D`, v)
+}
+
+#' @export
+getMODescentRange2D <- function(a, b) {
+    .Call(`_mogsa_getMODescentRange2D`, a, b)
+}
+
+#' @export
+imputeBoundary <- function(moGradMat, gradMatList, dims) {
+    .Call(`_mogsa_imputeBoundary`, moGradMat, gradMatList, dims)
+}
+
+#' @export
+getCriticalPointsCellCPP <- function(moGradMat, gradMatList, div, dims) {
+    .Call(`_mogsa_getCriticalPointsCellCPP`, moGradMat, gradMatList, div, dims)
+}
+
+#' @export
+connectedComponentsGrid <- function(ids, dims) {
+    .Call(`_mogsa_connectedComponentsGrid`, ids, dims)
+}
+
+#' @export
+integrateVectorField <- function(gradMat, dims, sinks) {
+    .Call(`_mogsa_integrateVectorField`, gradMat, dims, sinks)
+}
+
+#' @export
+integrateBackwards <- function(gradMat, dims, startID, stopCells) {
+    .Call(`_mogsa_integrateBackwards`, gradMat, dims, startID, stopCells)
+}
+
+#' @export
 locallyNondominatedCPP <- function(fnMat, dims, includeDiagonals) {
     .Call(`_mogsa_locallyNondominatedCPP`, fnMat, dims, includeDiagonals)
+}
+
+#' @export
+changeOfSignCPP <- function(fnVec, dims, includeDiagonals) {
+    .Call(`_mogsa_changeOfSignCPP`, fnVec, dims, includeDiagonals)
+}
+
+#' @export
+changeOfBasin <- function(basins, dims) {
+    .Call(`_mogsa_changeOfBasin`, basins, dims)
 }
 
 gridBasedGradientCPP <- function(fnVec, dims, stepSizes, precNorm, precAngle) {
     .Call(`_mogsa_gridBasedGradientCPP`, fnVec, dims, stepSizes, precNorm, precAngle)
 }
 
-cumulateGradientsCPP <- function(centers, gradients, precVectorLength, precNorm, fixDiagonals, cumulateGradientLength) {
-    .Call(`_mogsa_cumulateGradientsCPP`, centers, gradients, precVectorLength, precNorm, fixDiagonals, cumulateGradientLength)
+#' @export
+hessian <- function(fnVec, dims, stepSizes) {
+    .Call(`_mogsa_hessian`, fnVec, dims, stepSizes)
+}
+
+cumulateGradientsCPP <- function(centers, gradients, stopCells, precVectorLength, precNorm, fixDiagonals, cumulateGradientLength) {
+    .Call(`_mogsa_cumulateGradientsCPP`, centers, gradients, stopCells, precVectorLength, precNorm, fixDiagonals, cumulateGradientLength)
 }
 
 getBiObjGradientCPP <- function(g1, g2, precNorm, precAngle) {

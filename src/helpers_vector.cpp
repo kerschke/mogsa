@@ -84,6 +84,7 @@ NumericVector normalizeVectorCPP(NumericVector vec, double prec) {
   return vec2 ;
 }
 
+//' @export
 // [[Rcpp::export]]
 NumericMatrix normalizeMatrixRowsCPP(NumericMatrix mat, double prec) {
   mat = clone(mat);
@@ -117,54 +118,11 @@ double computeAngleCPP(NumericVector vec1, NumericVector vec2, double prec) {
       }
     } 
   }
-  return angle ;
+  return angle;
 }
-
-
-// // [[Rcpp::export]]
-// IntegerVector findNextCellCPP(double angle) {
-//   // which is the next cell one has to move to (based on the angle)?
-//   
-//   IntegerVector direction(2, 3);
-//   // ensure to only consider angles between 0 and 360 degrees
-//   while (angle < 360) {
-//     angle += 360.0;
-//   };
-//   angle = std::fmod(angle, 360.0);
-//   
-//   if ((angle > 22.5) & (angle <= 67.5)) {
-//     direction[0] = 1; // step in x-direction
-//     direction[1] = 1; // step in y-direction
-//   } else if ((angle > 67.5) & (angle <= 112.5)) {
-//     direction[0] = 1;
-//     direction[1] = 0;
-//   } else if ((angle > 112.5) & (angle <= 157.5)) {
-//     direction[0] = 1;
-//     direction[1] = -1;
-//   } else if ((angle > 157.5) & (angle <= 202.5)) {
-//     direction[0] = 0;
-//     direction[1] = -1;
-//   } else if ((angle > 202.5) & (angle <= 247.5)) {
-//     direction[0] = -1;
-//     direction[1] = -1;
-//   } else if ((angle > 247.5) & (angle <= 292.5)) {
-//     direction[0] = -1;
-//     direction[1] = 0;
-//   } else if ((angle > 292.5) & (angle <= 337.5)) {
-//     direction[0] = -1;
-//     direction[1] = 1;
-//   } else {
-//     direction[0] = 0;
-//     direction[1] = 1;
-//   }
-//   
-//   return direction ;
-// }
-
 
 // [[Rcpp::export]]
 IntegerVector findNextCellCPP(NumericVector gradient) {
-// IntegerVector findNextCellHighDimensionCPP(NumericVector gradient) {
   // which is the next cell one has to move to (based on the high-dimensional gradient)?
 
   int d = gradient.size();
@@ -187,34 +145,16 @@ IntegerVector findNextCellCPP(NumericVector gradient) {
   return direction;
 }
 
-
-// // convert rowIndex (1, ..., nRow) and columnIndex (1, ..., nColumns) to cell ID (1, ..., nRows * nColumns)
-// // [[Rcpp::export]]
-// int convertIndices2CellIDCPP(int rowIndex, int columnIndex, int nRows = 100, int nColumns = 100) {
-//   
-//   int cellID = -1;
-//   if ((columnIndex > nColumns) | (columnIndex < 1) | (rowIndex > nRows) | (rowIndex < 1)) {
-//     // if either the row- or columnIndex are located outside the boundaries, return -1 as ID
-//     cellID = -1;
-//   } else {
-//     cellID = (rowIndex - 1) * nColumns + columnIndex;
-//   }
-//   return cellID;
-// }
-
-
 // convert index per dimension [(1, ..., rows), (1, ..., columns), ...] to cell ID (1, ..., prod(dims))
 // [[Rcpp::export]]
 int convertIndices2CellIDCPP(IntegerVector indices, IntegerVector dims) {
-// int convertHighDimensionalIndices2CellIDCPP(IntegerVector indices, IntegerVector dims) {
-
   int cellID = -1;
   if (is_true(any(indices > dims)) | is_true(any(indices < 1))) {
     // if either the row- or columnIndex are located outside the boundaries, return -1 as ID
     cellID = -1;
   } else {
     int d = dims.size();
-    IntegerVector cumcells(d, 1);
+    std::vector<int> cumcells(d);
     cumcells[0] = 1;
     for (int j = 1; j < d; j++) {
       cumcells[j] = cumcells[j - 1] * dims[j - 1];
@@ -227,30 +167,9 @@ int convertIndices2CellIDCPP(IntegerVector indices, IntegerVector dims) {
   return cellID;
 }
 
-
-// // convert cellID (1, ..., nRows * nColumns) to rowIndex (1, ..., nRow) and columnIndex (1, ..., nColumns)
-// // [[Rcpp::export]]
-// IntegerVector convertCellID2IndicesCPP(int cellID, int nRows = 100, int nColumns = 100) {
-// 
-//   IntegerVector indexVector(2, -1);
-//   if ((cellID > (nRows * nColumns)) | (cellID < 1)) {
-//     // if the cell ID has an irregular value, return -1 for the row and column indices
-//     indexVector = rep(-1, 2);
-//   } else {
-//     int x = cellID - 1;
-//     int y = floor(x / nColumns);
-//     indexVector[0] = y + 1;              // rowIndex
-//     indexVector[1] = (x % nColumns) + 1; // columnIndex
-//   }
-//   return indexVector;
-// }
-
-
 // convert cellID (1, ..., prod(dims)) to index per dimension [(1, ..., rows), (1, ..., columns), ...]
 // [[Rcpp::export]]
 IntegerVector convertCellID2IndicesCPP(int cellID, IntegerVector dims) {
-// IntegerVector convertHighDimensionalCellID2IndicesCPP(int cellID, IntegerVector dims) {
-
   int d = dims.size();
   IntegerVector indexVector(d, -1);
 
@@ -270,133 +189,637 @@ IntegerVector convertCellID2IndicesCPP(int cellID, IntegerVector dims) {
   return indexVector;
 }
 
+double relativeVectorOrientation(NumericVector a, NumericVector b) {
+  // > 0 --> b right of a
+  // < 0 --> b left of a
+  // == 0 --> (anti-) parallel
+  return (a(0) * -b(1)) + (a(1) * b(0));
+}
 
-// // compute the cumulated gradient matrix based on a grid of points and their corresponding gradients;
-// // precVectorLength defines the threshold of the multi-objective gradient length, for which the
-// // corresponding point is considered to be locally efficient (suggest: 0.001 or smaller);
-// // precNorm is the threshold used when normalizing a vector (within the angle-computation)
-// // [[Rcpp::export]]
-// NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm) {
-// 
-//   // FIXME: so far, the code only supports 2D-problems
-//   int d = centers.ncol();                   // dimensionality of search space
-//   int n = centers.nrow();                   // number of grid points
-// 
-//   // number of grid points per (search space) dimension
-//   NumericVector ctr1 = centers(_,0);
-//   ctr1 = unique(ctr1);
-//   int nColumns = ctr1.size();               // #columns = number of grid points in x1-dimension
-//   NumericVector ctr2 = centers(_,1);
-//   ctr2 = unique(ctr2);
-//   int nRows = ctr2.size();                  // #rows = number of grid points in x2-dimension
-// 
-//   NumericVector gradientLengths(n);         // length vector for the multi-objective gradients
-//   IntegerVector cellPointer(n, -999);       // vector, which indicates per cell the successor cell
-//   NumericVector gradFieldVector(n, -999.0); // the "final" result vector
-//   LogicalVector visited = rep(false, n);    // which cells have already been "visited" / "processed"
-// 
-//   // helper variables
-//   double angle;
-//   double vectorLength = -1.0;
-//   NumericVector baseVector = NumericVector::create( 1.0, 0.0 );
-//   NumericVector currentGradients;
-//   int visitCounter = 0;                     // counter, enabling early stop of algorithm once all cells are processed
-//   IntegerVector currentCell(d);             // row and column index of the current cell
-//   IntegerVector nextCell(d);                // row and column index of the next (= successor) cell
-//   int nextCellID;
-// 
-//   for (int i = 0; i < n; i++) {
-//     // iterate over all cells, extract their gradients and store the gradient lengths
-//     currentGradients = gradients(i,_);
-//     vectorLength = computeVectorLengthCPP(currentGradients);
-//     gradientLengths[i] = vectorLength;
-//     if (vectorLength < precVectorLength) {
-//       // if the multi-objective gradient is "short enough", the current cell is considered
-//       // to be locally efficient (--> move on to the next cell)
-//       visited[i] = true;
-//       visitCounter++;
-//       gradFieldVector[i] = vectorLength;
-//     } else {
-//       // compute the angle of the gradient and identify the succeeding cell
-//       angle = computeAngleCPP(baseVector, currentGradients, precNorm);
-//       if (currentGradients[1] < 0) {
-//         angle = 360 - angle;
-//       }
-//       nextCell = findNextCellCPP(angle);
-//       currentCell = convertCellID2IndicesCPP(i + 1, nRows, nColumns);
-//       nextCell += currentCell;
-//       if ((nextCell[0] > nRows) | (nextCell[0] < 1) | (nextCell[1] > nColumns) | (nextCell[1] < 1)) {
-//         // if the next cell is located outside the boundaries, one can not move further
-//         // into the direction of its gradient
-//         visited[i] = true;
-//         visitCounter++;
-//         gradFieldVector[i] = vectorLength;
-//       } else {
-//         // otherwise, store the successor cell
-//         nextCellID = convertIndices2CellIDCPP(nextCell[0], nextCell[1], nRows, nColumns);
-//         cellPointer[i] = nextCellID - 1;
-//       }
-//     }
-//   }
-// 
-//   /* below, the actual cumulative part begins */
-// 
-//   // helper variables
-//   int currentCellID;
-//   int pathLength;
-//   IntegerVector path(n, -999);
-//   for (int i = 0; i < n; i++) {
-//     // iterate over all cells
-//     if (visitCounter == n) {
-//       // leave the for-loop if all cells have already been visited
-//       break;
-//     }
-//     if (!visited[i]) {
-//       // if the i-th cell has not yet been visited, follow the path
-//       // from that cell towards a previously "visited" cell (either
-//       // from an earlier path, a boundary point pointing out of bounds,
-//       // or a local efficient point)
-// 
-//       // initialize the path with cell i
-//       currentCellID = i;
-//       path[0] = currentCellID;
-//       pathLength = 1;
-//       visited[currentCellID] = true;
-//       nextCellID = cellPointer[currentCellID];
-//       while (!visited[nextCellID]) {
-//         // as long as the succeeding cell has not been visited, append
-//         // such a cell to the current path
-//         currentCellID = nextCellID;
-//         path[pathLength] = currentCellID;
-//         visited[currentCellID] = true;
-//         visitCounter++;
-//         nextCellID = cellPointer[currentCellID];
-//         pathLength++;
-//       }
-// 
-//       double a = 0.0;
-//       if (gradFieldVector[nextCellID] > -999) {
-//         // if the path stopped, because its next cell was already
-//         // part of an earlier loop, add the value of the next
-//         // cell to the cumulated sum (a) -- and ensure that
-//         // this cell is not counted twice
-//         a = gradFieldVector[nextCellID];
-//         visitCounter--;
-//       }
-//       if (pathLength > 0) {
-//         // iterate backwards over the path and add the cumulated
-//         // sum of gradient lengths to the cells of the path
-//         for (int j = pathLength; j > 0; j--) {
-//           int index = path[j - 1];
-//           a += gradientLengths[index];
-//           gradFieldVector[index] = a;
-//         }
-//       }
-//     }
-//   }
-// 
-//   return gradFieldVector;
-// }
+//' @export
+// [[Rcpp::export]]
+NumericVector rotate90Right2D(NumericVector v) {
+  NumericVector w = clone(v);
+  w(0) = v(1);
+  w(1) = -v(0);
+  
+  return w;
+}
+
+//' @export
+// [[Rcpp::export]]
+NumericVector rotate90Left2D(NumericVector v) {
+  NumericVector w = clone(v);
+  w(0) = -v(1);
+  w(1) = v(0);
+  
+  return w;
+}
+
+//' @export
+// [[Rcpp::export]]
+List getMODescentRange2D(NumericVector a, NumericVector b) {
+  double angle = computeAngleCPP(a, b, 0);
+  if (angle <= 90) {
+    return List::create(a, b);
+  }
+  
+  double orientation = relativeVectorOrientation(a, b);
+  
+  if (orientation > 0) {
+    // b right of a
+    return List::create(rotate90Left2D(b), rotate90Right2D(a));
+  } else if (orientation < 0) {
+    // b left of a
+    return List::create(rotate90Left2D(a), rotate90Right2D(b));
+  } else {
+    // orientation == 0
+    // a, b are (anti-) parallel
+    if (is_true(all(a == b))) {
+      return List::create(rotate90Left2D(a), rotate90Right2D(a));
+    } else {
+      return List::create(NumericVector::create(0,0),NumericVector::create(0,0));
+    }
+  }
+}
+
+IntegerMatrix getNeighbourhood(int d, bool include_diagonals) {
+  if (include_diagonals) {
+    Rcpp::Function expandGrid("expand.grid");
+    
+    IntegerVector v = IntegerVector::create(-1,0,1);
+    
+    DataFrame deltasDF;
+    
+    if (d == 2) {
+      deltasDF = expandGrid(v, v);
+    } else if (d == 3) {
+      deltasDF = expandGrid(v, v, v);
+    } else {
+      warning("Neighbourhood could not be created, d not in {2,3}!");
+    }
+    return internal::convert_using_rfunction(deltasDF, "as.matrix");
+  } else {
+    IntegerMatrix deltas(3 * d, d);
+    IntegerVector base(d, 0);
+    int cnt = 0;
+    
+    for (int d_iter = 0; d_iter < d; d_iter++) {
+      for (int step = -1; step <= 1; step++) {
+        IntegerVector v = clone(base);
+        v(d_iter) = step;
+        deltas(cnt++,_) = v;
+      }
+    }
+    
+    return deltas;
+  }
+}
+
+bool dominates(NumericVector a, NumericVector b) {
+  if (is_true(any(a < b)) &&
+      is_true(all(a <= b))) {
+    return true;
+  }
+  
+  return false;
+}
+
+//' @export
+// [[Rcpp::export]]
+NumericMatrix imputeBoundary(NumericMatrix moGradMat, List gradMatList, IntegerVector dims) {
+  int p = gradMatList.length();
+  int d = dims.size();
+  int n = moGradMat.nrow();
+  
+  NumericMatrix moGrad = clone(moGradMat);
+  
+  IntegerVector indices;
+  NumericVector newGradient;
+  
+  std::vector<NumericMatrix> gradMat(p);
+  
+  for (int i = 0; i < gradMatList.length(); i++) {
+    gradMat[i] = as<NumericMatrix>(gradMatList(i));
+  }
+  
+  for (int id = 1; id <= n; id++) {
+    indices = convertCellID2IndicesCPP(id, dims);
+    
+    if (is_true(any(indices == 1)) || is_true(any(indices == dims))) {
+      // id is at a border
+      
+      // for each dimension, if the MOG is leaving the legal area,
+      // see if setting that particular dimension to zero results in a
+      // vector consistent with the single-objective gradients
+      
+      for (int d_iter = 0; d_iter < d; d_iter++) {
+        if ((indices(d_iter) == 1            && moGrad(id-1,d_iter) < 0) || // lower bound and negative-going component
+            (indices(d_iter) == dims(d_iter) && moGrad(id-1,d_iter) > 0))   // upper bound and positive-going component
+          {
+          // test if setting this dimension to zero is still consistent with the
+          // single-objective gradients
+          double length = computeVectorLengthCPP(moGrad(id-1,_));
+          
+          newGradient = moGrad(id-1,_);
+          newGradient(d_iter) = 0;
+          
+          bool legal = true;
+          
+          for (int f_id = 0; f_id < p; f_id++) {
+            if (sum(gradMat[f_id](id-1,_) * newGradient) < 0) {
+              legal = false;
+            }
+          }
+          
+          if (is_false(all(newGradient == 0)) && legal) {
+            moGrad(id-1,_) = newGradient / computeVectorLengthCPP(newGradient) * length;
+          }
+        }
+      }
+    }
+  }
+  
+  return moGrad;
+}
+
+//' @export
+// [[Rcpp::export]]
+List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, NumericVector div, IntegerVector dims) {
+  int p = gradMatList.length();
+  int d = dims.size();
+  int n = div.length();
+  
+  std::vector<NumericMatrix> gradMat(p);
+  
+  for (int i = 0; i < gradMatList.length(); i++) {
+    gradMat[i] = as<NumericMatrix>(gradMatList(i));
+  }
+  
+  std::unordered_set<int> sinks;
+  std::unordered_set<int> sources;
+  std::unordered_set<int> saddles;
+  
+  std::vector<int> sink_count(n, 0);
+  std::vector<int> source_count(n, 0);
+  
+  // anchor index of the current cell
+  IntegerVector anchorIndex;
+  IntegerVector neighbourIndex;
+  IntegerMatrix cornerIndices(d + 1, d);
+  IntegerVector cornerIDs(d + 1);
+  NumericMatrix allVectors(p*(d + 1), d);
+  
+  // helpers
+  NumericVector vec;
+  NumericVector compVec;
+
+  for (int id = 1; id <= n; id++) {
+    // loop over cell indices
+    if (id % 1000 == 0) {
+      cout << id << '\r';
+    }
+    
+    anchorIndex = convertCellID2IndicesCPP(id, dims);
+    
+    // for each "neighbouring simplex"
+    for (int simplexCounter = 0; simplexCounter < pow(2, d); simplexCounter++) {
+      // fill all corners of current cell
+      int step;
+      bool illegal_vertex = false;
+      for (int d_corner = 0; d_corner < d; d_corner++) {
+        // is d_corner-th bit set?
+        if (((simplexCounter >> d_corner) & 1) == 0) {
+          step = -1;
+        } else {
+          step = +1;
+        }
+        
+        neighbourIndex = clone(anchorIndex);
+        neighbourIndex(d_corner) += step;
+        
+        if (is_true(any(neighbourIndex < 1)) ||
+            is_true(any(neighbourIndex > dims))) {
+          // illegal cell! we cannot evaluate this "simplex"
+          illegal_vertex = true;
+          break;
+        }
+        
+        cornerIndices(d_corner,_) = neighbourIndex;
+      }
+      
+      if (illegal_vertex) {
+        // do not evaluate, if simplex is not legal
+        continue;
+      }
+      
+      cornerIndices(d,_) = anchorIndex;
+      
+      for (int cornerIndex = 0; cornerIndex < cornerIndices.nrow(); cornerIndex++) {
+        cornerIDs(cornerIndex) = convertIndices2CellIDCPP(cornerIndices(cornerIndex,_), dims);
+      }
+      
+      int last_id = 0;
+      for (int cornerIndex = 0; cornerIndex < cornerIndices.nrow(); cornerIndex++) {
+        for (int fID = 0; fID < p; fID++) {
+          allVectors(last_id++,_) = gradMat[fID](cornerIDs(cornerIndex) - 1,_);
+        }
+      }
+      
+      bool crit = true;
+      
+      // for each gradient vector ...
+      
+      for (int vID = 0; vID < allVectors.nrow(); vID++) {
+        vec = allVectors(vID,_);
+        bool pos = false;
+        bool neg = false;
+
+        // for each other gradient ...
+        
+        for (int compID = 0; compID < allVectors.nrow(); compID++) {
+          compVec = allVectors(compID,_);
+          if (is_true(all(compVec == vec))) continue;
+          
+          // TODO 3D
+          double orientation = relativeVectorOrientation(vec, compVec);
+          
+          // TODO >=,<= or >, < ?!
+          if (orientation > 0) {
+            pos = true;
+          }
+          if (orientation < 0) {
+            neg = true;
+          }
+        }
+        
+        if (!(pos && neg)) {
+          crit = false;
+          break;
+        }
+      }
+      
+      // for (int vID = 0; vID < allVectors.nrow(); vID++) {
+      //   vec = allVectors(vID,_);
+      //   
+      //   if (is_true(all(vec == 0))) {
+      //     crit = true;
+      //   }
+      // }
+      
+      if (crit) {
+        // double total_div = 0;
+        bool pos = false;
+        bool neg = false;
+
+        for (int i : cornerIDs) {
+          // total_div += div(i-1);
+          if (div(i-1) >= 0) {
+            pos = true;
+          }
+          
+          if (div(i-1) <= 0) {
+            neg = true;
+          }
+        }
+        
+        for (int i : cornerIDs) {
+          if (pos && !neg) {
+            source_count[i-1]++;
+          }
+          if (neg && !pos) {
+            sink_count[i-1]++;
+          }
+          // if (total_div >= 0) {
+          //   source_count[i-1]++;
+          // }
+          // if (total_div <= 0) {
+          //   sink_count[i-1]++;
+          // }
+        }
+      }
+    }
+    
+    // (2)
+    // boundary cases: also critical (sink) if MOG leaves legal area
+    
+    if (is_true(any(anchorIndex == 1)) || is_true(any(anchorIndex == dims))) {
+      for (int d_iter = 0; d_iter < d; d_iter++) {
+        if ((anchorIndex(d_iter) == 1            && moGradMat(id-1,d_iter) < 0) || // lower bound and negative-going component
+            (anchorIndex(d_iter) == dims(d_iter) && moGradMat(id-1,d_iter) > 0))   // upper bound and positive-going component
+          {
+          sinks.insert(id);
+        }
+      }
+    }
+  }
+  
+  for (int id = 1; id <= n; id++) {
+    if ((source_count[id-1] > 0 && sink_count[id-1] > 0)) {
+      saddles.insert(id);
+    } else if (source_count[id-1] > 0) {
+      sources.insert(id);
+    } else if (sink_count[id-1] > 0) {
+      sinks.insert(id);
+    }
+  }
+  
+  return List::create(Named("sinks")=wrap(sinks), _["sources"]=wrap(sources), _["saddles"]=wrap(saddles));
+}
+
+//' @export
+// [[Rcpp::export]]
+IntegerVector connectedComponentsGrid(IntegerVector ids, IntegerVector dims) {
+  IntegerVector ccs(ids.length(), 0);
+  std::unordered_set<int> ids_set(ids.begin(), ids.end());
+  std::unordered_map<int,int> id_to_index;
+  
+  int d = dims.length();
+  
+  for (int i = 0; i < ids.length(); i++) {
+    id_to_index[ids(i)] = i;
+  }
+  
+  int cc = 1;
+  
+  IntegerMatrix neighbourhood = getNeighbourhood(d, true);
+  
+  for (int start_id : ids) {
+    if (ccs(id_to_index[start_id]) == 0) {
+      // not yet assigned
+      std::deque<int> to_evaluate;
+      std::unordered_set<int> seen;
+
+      to_evaluate.push_back(start_id);
+      seen.insert(start_id);
+      
+      while (!to_evaluate.empty()) {
+        int id = to_evaluate.front();
+        to_evaluate.pop_front();
+        
+        ccs(id_to_index[id]) = cc;
+
+        // add each neighbour to queue, if in ids
+        
+        for (int r = 0; r < neighbourhood.nrow(); r++) {
+          IntegerVector gridIndex = convertCellID2IndicesCPP(id, dims);
+          gridIndex += neighbourhood(r,_);
+          
+          if (is_true(any(gridIndex > dims)) || is_true(any(gridIndex < 1))) {
+            // invalid grid point
+            continue;
+          }
+          
+          if (is_true(all(neighbourhood(r,_) == 0))) {
+            // not interesting
+            continue;
+          }
+          
+          int neighbour_id = convertIndices2CellIDCPP(gridIndex, dims);
+          
+          if ((ids_set.find(neighbour_id) != ids_set.end()) && (seen.find(neighbour_id) == seen.end())) {
+            to_evaluate.push_back(neighbour_id);
+            seen.insert(neighbour_id);
+          }
+        }
+      }
+      
+      cc++;
+    }
+    
+  }
+  
+  return ccs;
+}
+
+//' @export
+// [[Rcpp::export]]
+List integrateVectorField(NumericMatrix gradMat, IntegerVector dims, IntegerVector sinks) {
+  std::unordered_set<int> stop(sinks.begin(), sinks.end());
+  
+  NumericVector currentPoint;
+  NumericVector currentPointCell;
+  IntegerVector currentIndex;
+  int currentID;
+  int nextID;
+  int previousID = -1;
+  
+  int d = dims.size();
+  int n = gradMat.nrow();
+  
+  // helpers
+  double scaling;
+  double requiredScaling;
+  double target;
+  
+  std::vector<double> height(n);
+  std::vector<int> last_visited(n);
+  std::vector<double> gradientLengths(n);
+  std::vector< std::vector<double> > gradients(n);
+  
+  for (int id = 1; id <= n; id++) {
+    gradientLengths[id-1] = computeVectorLengthCPP(gradMat(id-1,_));
+    
+    if (stop.find(id) != stop.end()) {
+      height[id-1] = gradientLengths[id-1] / 2;
+      last_visited[id-1] = id;
+    }
+  }
+  
+  for (int id = 1; id <= n; id++) {
+    if (id % 1000 == 0) {
+      cout << '\r' << id;
+    }
+    
+    std::unordered_set<int> seen;
+    
+    if (stop.find(id) != stop.end()) continue;
+
+    currentID = id;
+    
+    currentIndex = convertCellID2IndicesCPP(id, dims);
+    currentPoint = as<NumericVector>(currentIndex);
+    
+    while (true) {
+      scaling = std::numeric_limits<double>::max();
+      
+      for (int d_iter = 0; d_iter < d; d_iter++) {
+        double grad_d_iter = gradMat(currentID-1,d_iter);
+        
+        if (grad_d_iter > 0) {
+          // check collision with cell + 1 in this dimension
+          target = currentIndex(d_iter) + 0.51;
+        } else if (grad_d_iter < 0) {
+          // check collision with cell - 1 in this dimension
+          target = currentIndex(d_iter) - 0.51;
+        } else {
+          // grad_d_iter == 0
+          continue;
+        } 
+        
+        requiredScaling = (target - currentPoint(d_iter)) / grad_d_iter;
+        
+        scaling = min(requiredScaling, scaling);
+      }
+      
+      if (scaling == std::numeric_limits<double>::max()) {
+        break;
+      }
+      
+      currentPoint = currentPoint + scaling * gradMat(currentID-1,_);
+      height[id - 1] += scaling * gradientLengths[currentID - 1] * gradientLengths[currentID - 1];
+      
+      currentPointCell = round(currentPoint, 0);
+      currentIndex = as<IntegerVector>(currentPointCell);
+      
+      if (is_true(any(currentIndex > dims)) || is_true(any(currentIndex < 1))) {
+        break;
+      }
+      
+      if (d == 2) {
+        nextID = currentIndex(0) + (currentIndex(1) - 1) * dims[0];
+      } else {
+        nextID = convertIndices2CellIDCPP(currentIndex, dims);
+      }
+      
+      if (nextID != previousID && seen.find(nextID) != seen.end()) {
+        break;
+      }
+      
+      seen.insert(currentID);
+      previousID = currentID;
+      currentID = nextID;
+      
+      last_visited[id-1] = currentID;
+      
+      if (stop.find(currentID) != stop.end()) {
+        break;
+      }
+    }
+  }
+  
+  return(List::create(_["height"]=height, _["last.visited"]=last_visited));
+}
+
+//' @export
+// [[Rcpp::export]]
+IntegerVector integrateBackwards(NumericMatrix gradMat, IntegerVector dims, int startID, IntegerVector stopCells) {
+  std::unordered_set<int> seen; // all visited points except for the starting point
+  std::unordered_map<int,int> seen_amt;
+  std::unordered_set<int> stop(stopCells.begin(), stopCells.end());
+  std::set<NumericVector> currentPoints;
+  
+  int d = dims.size();
+  
+  if (d != 2) {
+    warning("d > 2 not implemented yet!");
+    return IntegerVector(0);
+  }
+  
+  IntegerVector startPoint = convertCellID2IndicesCPP(startID, dims);
+  currentPoints.insert(as<NumericVector>(startPoint));
+  
+  // helpers
+  IntegerVector neighbourIndex;
+  NumericVector neighbourPoint;
+  NumericVector neighbourGrad;
+  int neighbourID;
+  
+  NumericVector pointDelta;
+  NumericVector lowerLimits;
+  NumericVector upperLimits;
+  NumericVector legalLower(d);
+  NumericVector legalUpper(d);
+  
+  while(!currentPoints.empty()) {
+    // save next points in separate set
+    std::set<NumericVector> nextPoints;
+    
+    // iterate over all current points
+    for (NumericVector point : currentPoints) {
+      NumericVector gridPoint = round(point, 0);
+      IntegerVector gridPointIndex = as<IntegerVector>(gridPoint);
+      
+      // TODO 3D
+      // iterate over all neighbours
+      for (int d_1 = -1; d_1 <= 1; d_1++) {
+        for (int d_2 = -1; d_2 <= 1; d_2++) {
+          if (d_1 == 0 && d_2 == 0) continue; // that's just where we are right now!
+          
+          neighbourIndex = clone(gridPointIndex);
+          neighbourIndex(0) += d_1;
+          neighbourIndex(1) += d_2;
+          
+          if (is_true(any(neighbourIndex > dims)) || is_true(any(neighbourIndex < 1))) {
+            // not a valid grid point
+            continue;
+          }
+          
+          neighbourPoint = as<NumericVector>(neighbourIndex);
+          neighbourID = convertIndices2CellIDCPP(neighbourIndex, dims);
+          neighbourGrad = -1 * gradMat(neighbourID - 1,_);
+          
+          pointDelta = neighbourPoint - point;
+          lowerLimits = pointDelta - 0.6;
+          upperLimits = pointDelta + 0.6; // allow 0.6 instead of 0.5 for some numeric leeway
+
+          // lower and upper ranges for the admissible vector length
+          for (int i = 0; i < d; i++) {
+            if (neighbourGrad(i) != 0) {
+              double limit_1 = lowerLimits(i) / (neighbourGrad(i));
+              double limit_2 = upperLimits(i) / (neighbourGrad(i));
+              legalLower(i) = min(limit_1, limit_2);
+              legalUpper(i) = max(limit_1, limit_2);
+            } else {
+              if (lowerLimits(i) <= 0 && upperLimits(i) >= 0) {
+                // all is legal, i.e. does not matter
+                legalLower(i) = -std::numeric_limits<double>::max();
+                legalUpper(i) = std::numeric_limits<double>::max();
+              } else {
+                // none are legal
+                legalLower(i) = std::numeric_limits<double>::max();
+                legalUpper(i) = -std::numeric_limits<double>::max();
+              }
+            }
+          }
+          
+          
+          double minLength = max(legalLower);
+          double maxLength = min(legalUpper);
+          
+          if (minLength >= 0 && maxLength >= minLength) {
+            // legal point!
+            
+            double length = (minLength + maxLength) / 2.0;
+            NumericVector nextPoint = point + length * neighbourGrad;
+            NumericVector nextGridCell = round(nextPoint, 0);
+            IntegerVector nextGridCellIndex = as<IntegerVector>(nextGridCell);
+            int nextGridCellID = convertIndices2CellIDCPP(nextGridCellIndex, dims);
+            
+            if (stop.find(nextGridCellID) == stop.end() &&
+                seen_amt[nextGridCellID] < 10) {
+              // print(nextGridCellIndex);
+              // cout << nextGridCellID << endl;
+              
+              // save as a next point, if it is not a "stop cell"
+              // and was not already visited now
+              // cout << "Success" << endl;
+              seen_amt[nextGridCellID]++;
+              seen.insert(nextGridCellID);
+              nextPoints.insert(nextPoint);
+            }
+            
+          }
+        }
+        
+      }
+    }
+    
+    currentPoints = nextPoints;
+  }
+  
+  return IntegerVector(seen.begin(), seen.end());
+}
 
 //' @export
 // [[Rcpp::export]]
@@ -404,34 +827,11 @@ IntegerVector locallyNondominatedCPP(NumericMatrix fnMat, IntegerVector dims, bo
   int n = fnMat.nrow();
   int d = dims.size();
   
-  IntegerVector locallyNondominated;
+  std::vector<int> locallyNondominated;
   
-  IntegerMatrix deltas;
+  IntegerMatrix neighbourhood = getNeighbourhood(d, includeDiagonals);
   
-  if (includeDiagonals) {
-    Rcpp::Function expandGrid("expand.grid");
-    
-    IntegerVector v = IntegerVector::create(-1,0,1);
-    
-    DataFrame deltasDF = expandGrid(v, v, v);
-    deltas = internal::convert_using_rfunction(deltasDF, "as.matrix");
-  } else {
-    IntegerMatrix tmp(3 * d, d);
-    IntegerVector base(d);
-    int cnt = 0;
-    
-    for (int i = 0; i < d; i++) {
-      for (int step = -1; step <= 1; step++) {
-        IntegerVector v = clone(base);
-        v(i) = step;
-        tmp(cnt++,_) = v;
-      }
-    }
-    
-    deltas = tmp;
-  }
-  
-  int nDeltas = deltas.nrow();
+  int neighbours = neighbourhood.nrow();
   
   // helper
   IntegerVector indices;
@@ -443,8 +843,8 @@ IntegerVector locallyNondominatedCPP(NumericMatrix fnMat, IntegerVector dims, bo
     indices = convertCellID2IndicesCPP(id, dims);
     dominated = false;
     
-    for (int r = 0; r < nDeltas; r++) {
-      neighbourIndices = indices + deltas(r, _);
+    for (int r = 0; r < neighbours; r++) {
+      neighbourIndices = indices + neighbourhood(r, _);
       if (is_true(any(neighbourIndices < 1)) ||
           is_true(any(neighbourIndices > dims))) {
         continue;
@@ -452,8 +852,8 @@ IntegerVector locallyNondominatedCPP(NumericMatrix fnMat, IntegerVector dims, bo
       
       neighbourID = convertIndices2CellIDCPP(neighbourIndices, dims);
       
-      if (is_true(all(fnMat(neighbourID - 1, _) <= fnMat(id - 1, _))) &&
-          is_true(any(fnMat(neighbourID - 1, _) < fnMat(id - 1, _)))) {
+      if (is_true(any(fnMat(neighbourID - 1, _) < fnMat(id - 1, _))) &&
+          is_true(all(fnMat(neighbourID - 1, _) <= fnMat(id - 1, _)))) {
         dominated = true;
         break;
       }
@@ -464,13 +864,113 @@ IntegerVector locallyNondominatedCPP(NumericMatrix fnMat, IntegerVector dims, bo
     }
   }
   
-  return locallyNondominated;
+  return wrap(locallyNondominated);
+}
+
+//' @export
+// [[Rcpp::export]]
+IntegerVector changeOfSignCPP(NumericVector fnVec, IntegerVector dims, bool includeDiagonals) {
+  int n = fnVec.size();
+  int d = dims.size();
+  
+  IntegerVector changeOfSignIndices;
+  
+  IntegerMatrix deltas = getNeighbourhood(d, includeDiagonals);
+  
+  int nDeltas = deltas.nrow();
+  
+  // helper
+  IntegerVector indices;
+  IntegerVector neighbourIndices;
+  bool signChange;
+  int neighbourID;
+  
+  for (int id = 1; id <= n; id++) {
+    if (fnVec(id - 1) == 0) {
+      changeOfSignIndices.push_back(id);
+      continue;
+    }
+    
+    indices = convertCellID2IndicesCPP(id, dims);
+    signChange = false;
+    
+    for (int r = 0; r < nDeltas; r++) {
+      neighbourIndices = indices + deltas(r, _);
+      if (is_true(any(neighbourIndices < 1)) ||
+          is_true(any(neighbourIndices > dims))) {
+        // invalid neighbours
+        continue;
+      }
+      
+      neighbourID = convertIndices2CellIDCPP(neighbourIndices, dims);
+      
+      if (fnVec(id - 1) * fnVec(neighbourID - 1) < 0) {
+        // some neighbour has a different sign!
+        signChange = true;
+        break;
+      }
+    }
+    
+    if (signChange) {
+      changeOfSignIndices.push_back(id);
+    }
+  }
+  
+  return changeOfSignIndices;
+}
+
+//' @export
+// [[Rcpp::export]]
+IntegerVector changeOfBasin(IntegerVector basins, IntegerVector dims) {
+  int n = basins.size();
+  int d = dims.size();
+  
+  std::vector<int> ridges;
+  
+  IntegerMatrix neighbourhood = getNeighbourhood(d, false);
+  
+  int neighbours_amt = neighbourhood.nrow();
+  
+  // helper
+  IntegerVector indices;
+  IntegerVector neighbourIndices;
+  bool basin_change;
+  int neighbourID;
+  
+  for (int id = 1; id <= n; id++) {
+    indices = convertCellID2IndicesCPP(id, dims);
+    basin_change = false;
+    
+    for (int r = 0; r < neighbours_amt; r++) {
+      neighbourIndices = indices + neighbourhood(r, _);
+      if (is_true(any(neighbourIndices < 1)) ||
+          is_true(any(neighbourIndices > dims))) {
+        // invalid neighbour
+        continue;
+      }
+      
+      neighbourID = convertIndices2CellIDCPP(neighbourIndices, dims);
+      
+      if (basins(id - 1) != basins(neighbourID - 1)) {
+        // some neighbour is in a different basin!
+        basin_change = true;
+        break;
+      }
+    }
+    
+    if (basin_change) {
+      ridges.push_back(id);
+    }
+  }
+  
+  return wrap(ridges);
 }
 
 // [[Rcpp::export]]
 NumericMatrix gridBasedGradientCPP(NumericVector fnVec, IntegerVector dims, NumericVector stepSizes, double precNorm, double precAngle) {
   int n = fnVec.size();
   int d = dims.size();
+  // FIXME does not work properly!
   bool scaling = (stepSizes != nullptr);
   NumericMatrix gradMat(n, d);
   
@@ -527,12 +1027,97 @@ NumericMatrix gridBasedGradientCPP(NumericVector fnVec, IntegerVector dims, Nume
   return gradMat;
 }
 
+//' @export
+// [[Rcpp::export]]
+NumericMatrix hessian(NumericVector fnVec, IntegerVector dims, NumericVector stepSizes) {
+  int n = fnVec.size();
+  int d = dims.size();
+  NumericMatrix gradMat(n, d * d);
+  
+  // helper variables
+  double diff;
+  IntegerVector indices;
+  IntegerVector indices_1;
+  IntegerVector indices_2;
+  IntegerVector indices_3;
+  IntegerVector indices_4;
+
+  for (int id = 1; id <= n; id++) {
+    indices = convertCellID2IndicesCPP(id, dims);
+    
+    if (id % 1000 == 0) {
+      cout << id << '\r';
+    }
+    
+    for (int d_1 = 0; d_1 < d; d_1++) {
+      for (int d_2 = 0; d_2 < d; d_2++) {
+        // vector access is zero-indexed!
+        
+        if (d_1 == d_2) {
+          if (indices(d_1) == 1) {
+            // TODO forward differences required
+            diff = -1;
+          } else if (indices(d_1) == dims(d_1)) {
+            // TODO backward differences required
+            diff = -1;
+          } else {
+            // central differences
+            indices_1 = clone(indices);
+            indices_1(d_1)++;
+            indices_2 = clone(indices);
+            indices_2(d_1)--;
+            
+            diff = 1 * fnVec(convertIndices2CellIDCPP(indices_1, dims) - 1)
+                 - 2 * fnVec(convertIndices2CellIDCPP(indices, dims) - 1)
+                 + 1 * fnVec(convertIndices2CellIDCPP(indices_2, dims) - 1);
+          }
+          
+          diff = diff / (stepSizes(d_2) * stepSizes(d_2));
+        } else {
+          if (indices(d_1) == 1 || indices(d_2) == 1) {
+            // TODO forward differences required
+            diff = -1;
+          } else if (indices(d_1) == dims(d_1) || indices(d_2) == dims(d_2)) {
+            // TODO backward differences required
+            diff = -1;
+          } else {
+            // central differences
+            indices_1 = clone(indices);
+            indices_1(d_1)++;
+            indices_1(d_2)++;
+            
+            indices_2 = clone(indices);
+            indices_2(d_1)++;
+            indices_2(d_2)--;
+            
+            indices_3 = clone(indices);
+            indices_3(d_1)--;
+            indices_3(d_2)++;
+            
+            indices_4 = clone(indices);
+            indices_4(d_1)--;
+            indices_4(d_2)--;
+            
+            diff = fnVec(convertIndices2CellIDCPP(indices_1, dims) - 1)
+                 - fnVec(convertIndices2CellIDCPP(indices_2, dims) - 1)
+                 - fnVec(convertIndices2CellIDCPP(indices_3, dims) - 1)
+                 + fnVec(convertIndices2CellIDCPP(indices_4, dims) - 1);
+          }
+          
+          diff = diff / (4 * stepSizes(d_2) * stepSizes(d_1));
+        }
+        
+        gradMat(id-1, d_1 * d + d_2) = diff;
+      }
+    }
+  }
+  
+  return gradMat;
+}
+
 
 // [[Rcpp::export]]
-NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm, bool fixDiagonals, bool cumulateGradientLength) {
-// NumericVector cumulateHighDimensionalGradientsCPP(NumericMatrix centers, NumericMatrix gradients, double precVectorLength, double precNorm) {
-
-  // FIXME: so far, the code only supports 2D-problems
+List cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, IntegerVector stopCells, double precVectorLength, double precNorm, bool fixDiagonals, bool cumulateGradientLength) {
   int d = centers.ncol();                   // dimensionality of search space
   int n = centers.nrow();                   // number of grid points
   
@@ -546,7 +1131,8 @@ NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradient
 
   NumericVector gradientLengths(n);         // length vector for the multi-objective gradients
   IntegerVector cellPointer(n, -999);       // vector, which indicates per cell the successor cell
-  NumericVector gradFieldVector(n, -999.0); // the "final" result vector
+  NumericVector gradFieldVector(n, -999.0); // the "final" result vector containing the cell height
+  IntegerVector last_visited(n, -1);        // vector containing the cell that integration was stopped at
   LogicalVector visited = rep(false, n);    // which cells have already been "visited" / "processed"
   
   // helper variables
@@ -588,6 +1174,14 @@ NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradient
         cellPointer[i] = nextCellID - 1;
       }
     }
+  }
+  
+  // set 0 height and visited for each stop cell
+  for (int id : stopCells) {
+    visitCounter++;
+    visited[id-1] = true;
+    last_visited[id-1] = id;
+    gradFieldVector(id-1) = gradientLengths(id-1) / 2;
   }
 
   /* below, the actual cumulative part begins */
@@ -656,12 +1250,18 @@ NumericVector cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradient
           }
           
           gradFieldVector[index] = a;
+          if (last_visited[nextCellID] != -1) {
+            last_visited[index] = last_visited[nextCellID];
+          } else {
+            last_visited[index] = currentCellID + 1;
+          }
+          
         }
       }
     }
   }
 
-  return gradFieldVector;
+  return List::create(_["height"]=gradFieldVector, _["last.visited"]=last_visited);
 }
 
 // Multiobjective gradient for two objectives
@@ -763,8 +1363,9 @@ NumericVector getTriObjGradientCPP(NumericVector g1, NumericVector g2, NumericVe
       return(0.5 * (g2 + g3));
     }
   }
-  
 }
+
+
 
 // [[Rcpp::export]]
 NumericMatrix getBiObjGradientGridCPP(NumericMatrix gradMat1, NumericMatrix gradMat2, double precNorm, double precAngle) {
@@ -797,22 +1398,10 @@ NumericVector calculateMaxDisplayHeightCPP(NumericVector heights, IntegerVector 
   // points are "dominated" by their neighbours from some point on
   // calculate this point here
   int n = heights.length();
+  int d = dims.length();
   NumericVector maxHeights(n);
 
-  IntegerMatrix deltas;
-  if (includeDiagonals) {
-    Rcpp::Function expandGrid("expand.grid");
-
-    IntegerVector v = IntegerVector::create(-1,0,1);
-    
-    DataFrame deltasDF = expandGrid(v, v, v);
-    IntegerMatrix deltas = internal::convert_using_rfunction(deltasDF, "as.matrix");
-  } else {
-    IntegerVector v = {0,0,0,1,0,0,0,1,0,0,0,1,-1,0,0,0,-1,0,0,0,-1};
-    v.attr("dim") = Dimension(3, 7);
-    deltas = as<IntegerMatrix>(v);
-    deltas = transpose(deltas);
-  }
+  IntegerMatrix deltas = getNeighbourhood(d, includeDiagonals);
   
   int nDeltas = deltas.nrow();
   
