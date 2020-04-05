@@ -59,8 +59,8 @@ imputeBoundary <- function(moGradMat, gradMatList, dims) {
 }
 
 #' @export
-getCriticalPointsCellCPP <- function(moGradMat, gradMatList, div, dims) {
-    .Call(`_mogsa_getCriticalPointsCellCPP`, moGradMat, gradMatList, div, dims)
+getCriticalPointsCellCPP <- function(moGradMat, gradMatList, localMinima, div, dims) {
+    .Call(`_mogsa_getCriticalPointsCellCPP`, moGradMat, gradMatList, localMinima, div, dims)
 }
 
 #' @export

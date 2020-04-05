@@ -345,14 +345,15 @@ NumericMatrix imputeBoundary(NumericMatrix moGradMat, List gradMatList, IntegerV
 
 //' @export
 // [[Rcpp::export]]
-List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, NumericVector div, IntegerVector dims) {
+List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, IntegerVector localMinima, NumericVector div, IntegerVector dims) {
   int p = gradMatList.length();
   int d = dims.size();
   int n = div.length();
   
   std::vector<NumericMatrix> gradMat(p);
+  std::unordered_set<int> localMinimaSet(localMinima.begin(), localMinima.end());
   
-  for (int i = 0; i < gradMatList.length(); i++) {
+  for (int i = 0; i < p; i++) {
     gradMat[i] = as<NumericMatrix>(gradMatList(i));
   }
   
@@ -362,6 +363,7 @@ List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, Numeric
   
   std::vector<int> sink_count(n, 0);
   std::vector<int> source_count(n, 0);
+  std::vector<int> saddle_count(n, 0);
   
   // anchor index of the current cell
   IntegerVector anchorIndex;
@@ -459,43 +461,32 @@ List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, Numeric
         }
       }
       
-      // for (int vID = 0; vID < allVectors.nrow(); vID++) {
-      //   vec = allVectors(vID,_);
-      //   
-      //   if (is_true(all(vec == 0))) {
-      //     crit = true;
-      //   }
-      // }
+      // check any local minimum we might miss above
+      for (int i : cornerIDs) {
+        if (localMinimaSet.find(i) != localMinimaSet.end()) {
+          crit = true;
+        }
+      }
       
       if (crit) {
-        // double total_div = 0;
-        bool pos = false;
-        bool neg = false;
+        // bool just_saddles = true;
+        // for (int i : cornerIDs) {
+        //   just_saddles = just_saddles && div_nullcline(i-1);
+        // }
+        // 
+        double total_div = 0;
 
         for (int i : cornerIDs) {
-          // total_div += div(i-1);
-          if (div(i-1) >= 0) {
-            pos = true;
-          }
-          
-          if (div(i-1) <= 0) {
-            neg = true;
-          }
+          total_div += div(i-1);
         }
         
         for (int i : cornerIDs) {
-          if (pos && !neg) {
+          if (total_div >= 0) {
             source_count[i-1]++;
           }
-          if (neg && !pos) {
+          if (total_div <= 0) {
             sink_count[i-1]++;
           }
-          // if (total_div >= 0) {
-          //   source_count[i-1]++;
-          // }
-          // if (total_div <= 0) {
-          //   sink_count[i-1]++;
-          // }
         }
       }
     }
@@ -515,7 +506,7 @@ List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, Numeric
   }
   
   for (int id = 1; id <= n; id++) {
-    if ((source_count[id-1] > 0 && sink_count[id-1] > 0)) {
+    if (sink_count[id-1] > 0 && source_count[id-1] > 0) {
       saddles.insert(id);
     } else if (source_count[id-1] > 0) {
       sources.insert(id);
@@ -1167,6 +1158,7 @@ List cumulateGradientsCPP(NumericMatrix centers, NumericMatrix gradients, Intege
         visited[i] = true;
         visitCounter++;
         gradFieldVector[i] = vectorLength;
+        last_visited[i] = i+1; // id = i+1 here
       } else {
         // otherwise, store the successor cell
         // nextCellID = convertHighDimensionalIndices2CellIDCPP(nextCell, dims);

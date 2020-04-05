@@ -3,15 +3,21 @@ localEfficientSetSkeleton = function(grid, integration="fast") {
   less = list()
   
   cat('1/3 Finding critical points ...\n')
-  critical = getCriticalPointsCellCPP(grid$mo.grad, grid$so.grad, grid$div, grid$dims)
   
+  lnd.1 = locallyNondominatedCPP(matrix(grid$obj.space[,1]), grid$dims, T)
+  lnd.2 = locallyNondominatedCPP(matrix(grid$obj.space[,2]), grid$dims, T)
+  
+  minima = intersect(lnd.1, lnd.2)
+  
+  critical = getCriticalPointsCellCPP(grid$mo.grad, grid$so.grad, minima, grid$div, grid$dims)
+
   sinks = critical$sinks
 
   ccs = connectedComponentsGrid(sinks, grid$dims)
   valid.ccs.ids = (ccs != 0 & !(ccs %in% as.numeric(names(table(ccs)))[table(ccs) < 4]))
   valid.ccs = ccs[valid.ccs.ids]
   valid.sinks = sinks[valid.ccs.ids]
-  
+
   cat('2/3 Integrating vector field ...\n')
   if (integration %in% c("fast")) {
     integrated = computeCumulatedPathLengths(grid$dec.space, grid$mo.grad, valid.sinks, fix.diagonals = T, prec.vector.length = 0, prec.norm = 0)

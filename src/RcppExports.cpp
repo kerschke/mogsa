@@ -162,16 +162,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // getCriticalPointsCellCPP
-List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, NumericVector div, IntegerVector dims);
-RcppExport SEXP _mogsa_getCriticalPointsCellCPP(SEXP moGradMatSEXP, SEXP gradMatListSEXP, SEXP divSEXP, SEXP dimsSEXP) {
+List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, IntegerVector localMinima, NumericVector div, IntegerVector dims);
+RcppExport SEXP _mogsa_getCriticalPointsCellCPP(SEXP moGradMatSEXP, SEXP gradMatListSEXP, SEXP localMinimaSEXP, SEXP divSEXP, SEXP dimsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type moGradMat(moGradMatSEXP);
     Rcpp::traits::input_parameter< List >::type gradMatList(gradMatListSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type localMinima(localMinimaSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type div(divSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
-    rcpp_result_gen = Rcpp::wrap(getCriticalPointsCellCPP(moGradMat, gradMatList, div, dims));
+    rcpp_result_gen = Rcpp::wrap(getCriticalPointsCellCPP(moGradMat, gradMatList, localMinima, div, dims));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -383,7 +384,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mogsa_rotate90Left2D", (DL_FUNC) &_mogsa_rotate90Left2D, 1},
     {"_mogsa_getMODescentRange2D", (DL_FUNC) &_mogsa_getMODescentRange2D, 2},
     {"_mogsa_imputeBoundary", (DL_FUNC) &_mogsa_imputeBoundary, 3},
-    {"_mogsa_getCriticalPointsCellCPP", (DL_FUNC) &_mogsa_getCriticalPointsCellCPP, 4},
+    {"_mogsa_getCriticalPointsCellCPP", (DL_FUNC) &_mogsa_getCriticalPointsCellCPP, 5},
     {"_mogsa_connectedComponentsGrid", (DL_FUNC) &_mogsa_connectedComponentsGrid, 2},
     {"_mogsa_integrateVectorField", (DL_FUNC) &_mogsa_integrateVectorField, 3},
     {"_mogsa_integrateBackwards", (DL_FUNC) &_mogsa_integrateBackwards, 4},
