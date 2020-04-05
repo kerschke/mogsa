@@ -146,8 +146,9 @@ computeSecondOrderGrid = function(gradients, dims, step.sizes, prec.norm = 1e-6,
   } else {
     j = sapply(1:nrow(gradients), function(i) {
       H = matrix(c(l[[1]][i, 1], l[[1]][i, 2], l[[2]][i, 1], l[[2]][i, 2]), nrow = 2, ncol = 2, byrow=T)
+      H = (t(H) + H) / 2
       
-      Re(eigen(H)$values)
+      Re(eigen(H, only.values = T)$values)
     })
     return(t(j))
   }
