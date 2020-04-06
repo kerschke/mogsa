@@ -469,23 +469,25 @@ List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, Integer
       }
       
       if (crit) {
-        // bool just_saddles = true;
-        // for (int i : cornerIDs) {
-        //   just_saddles = just_saddles && div_nullcline(i-1);
-        // }
-        // 
-        double total_div = 0;
+        bool pos = false;
+        bool neg = false;
 
         for (int i : cornerIDs) {
-          total_div += div(i-1);
+          if (div(i-1) <= 0) {
+            neg = true;
+          }
+          if (div(i-1) >= 0) {
+            pos = true;
+          }
         }
         
         for (int i : cornerIDs) {
-          if (total_div >= 0) {
+          if (pos && !neg) {
             source_count[i-1]++;
-          }
-          if (total_div <= 0) {
+          } else if (neg && !pos) {
             sink_count[i-1]++;
+          } else {
+            saddle_count[i-1]++;
           }
         }
       }
@@ -506,12 +508,12 @@ List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, Integer
   }
   
   for (int id = 1; id <= n; id++) {
-    if (sink_count[id-1] > 0 && source_count[id-1] > 0) {
-      saddles.insert(id);
-    } else if (source_count[id-1] > 0) {
+    if (source_count[id-1] > 0) {
       sources.insert(id);
     } else if (sink_count[id-1] > 0) {
       sinks.insert(id);
+    } else if (saddle_count[id-1] > 0) {
+      saddles.insert(id);
     }
   }
   
@@ -811,6 +813,152 @@ IntegerVector integrateBackwards(NumericMatrix gradMat, IntegerVector dims, int 
   
   return IntegerVector(seen.begin(), seen.end());
 }
+
+// //' @export
+// // [[Rcpp::export]]
+// IntegerVector criticalPointsCombinatorial(NumericMatrix fnMat, NumericMatrix moGradMat, IntegerVector dims) {
+//   int n = fnMat.nrow();
+//   int p = fnMat.ncol();
+//   int d = dims.size();
+//   
+//   std::map<int, std::set<int> > next_ids;
+//   std::map<int, std::set<int> > neigh_ids;
+//   std::vector<int> sinks;
+//   
+//   IntegerMatrix neighbourhood = getNeighbourhood(d, true);
+//   
+//   NumericVector obj;
+//   NumericVector n_obj;
+//   
+//   IntegerVector idx;
+//   IntegerVector n_idx;
+//   IntegerVector m_idx;
+//   
+//   NumericVector diff_1;
+//   NumericVector diff_2;
+//   
+//   NumericVector low;
+//   NumericVector high;
+//   
+//   // fill next_ids
+//   for (int id = 1; id <= n; id++) {
+//     obj = fnMat(id-1, _);
+//     
+//     idx = convertCellID2IndicesCPP(id, dims);
+//     
+//     for (int n_i = 0; n_i < neighbourhood.nrow(); n_i++) {
+//       n_idx = idx + neighbourhood(n_i,_);
+//       
+//       if (is_true(any(n_idx < 1))  || is_true(any(n_idx > dims)) || is_true(all(neighbourhood(n_i,_) == 0))) {
+//         // illegal neighbour
+//         continue;
+//       }
+//       
+//       int n_id = convertIndices2CellIDCPP(n_idx, dims);
+//       n_obj = fnMat(n_id-1,_);
+//       
+//       neigh_ids[id].insert(n_id);
+//       
+//       if (is_true(any(n_obj < obj)) && is_true(all(n_obj <= obj))) {
+//         // neighbour dominates
+//         next_ids[id].insert(n_id);
+//       }
+//       
+//       // if (is_true(any(n_obj < obj))) {
+//       //   // neighbour + another neighbour might dominate
+//       // 
+//       //   for (int m_i = 0; m_i < neighbourhood.nrow(); m_i++) {
+//       //     if (sum(abs(neighbourhood(m_i,_) - neighbourhood(n_i,_))) == 1) {
+//       //       // n_i, m_i are direct neighbours
+//       // 
+//       //       m_idx = idx + neighbourhood(m_i,_);
+//       // 
+//       //       if (is_true(any(m_idx < 1))  || is_true(any(m_idx > dims)) || is_true(all(neighbourhood(m_i,_) == 0))) {
+//       //         // illegal neighbour
+//       //         continue;
+//       //       }
+//       // 
+//       //       int m_id = convertIndices2CellIDCPP(m_idx, dims);
+//       //       
+//       //       // positive value = dominating obj
+//       //       diff_1 = obj - n_obj;
+//       //       diff_2 = obj - fnMat(m_id-1,_);
+//       //       
+//       //       if (p == 2) {
+//       //         high = pmax(diff_1, diff_2);
+//       //         low = pmin(diff_1, diff_2);
+//       // 
+//       //         if (is_true(any(high < 0)) || is_true(any(low > 0))) {
+//       //           continue;
+//       //         }
+//       //         
+//       //         if (sum(high / (high - low)) >= 1) {
+//       //           // dominating in between plausible
+//       //           next_ids[id].insert(n_id);
+//       //         }
+//       //       }
+//       //     }
+//       //   }
+//       // }
+//     }
+//     
+//     // additionally: MOG
+//     // IntegerVector next = findNextCellCPP(moGradMat(id-1,_));
+//     // next_ids[id].insert(convertIndices2CellIDCPP(idx + next, dims));
+//     
+//     IntegerVector next_diag = sign(moGradMat(id-1,_));
+//     
+//     int j = convertIndices2CellIDCPP(idx + next_diag, dims);
+//     if (j != -1) {
+//       next_ids[id].insert(j);
+//     }
+//     
+//     IntegerVector next_direct(2, 0);
+//     
+//     if (abs(moGradMat(id-1,0)) > abs(moGradMat(id-1,1))) {
+//       next_direct(0) = next_diag(0);
+//     } else if (abs(moGradMat(id-1,1)) > abs(moGradMat(id-1,0))) {
+//       next_direct(1) = next_diag(1);
+//     }
+//     
+//     if (is_true(any(next_direct != 0))) {
+//       int k = convertIndices2CellIDCPP(idx + next_direct, dims);
+//       if (k != -1) {
+//         next_ids[id].insert(k);
+//       }
+//     }
+//   }
+//   
+//   for (int id = 1; id <= n; id++) {
+//     if (next_ids[id].size() == 0) {
+//       sinks.push_back(id);
+//     }
+//     else {
+//       for (auto const& n_id: next_ids[id]) {
+// 
+//         if (next_ids[n_id].find(id) != next_ids[n_id].end()) {
+// 
+//           bool not_critical = false;
+// 
+//           // for (auto const& m_id: next_ids[n_id]) {
+//           //   if (m_id != id && neigh_ids[id].find(m_id) == neigh_ids[id].end()) {
+//           //     not_critical = true;
+//           //   }
+//           // }
+// 
+//           if (!not_critical) {
+//             sinks.push_back(id);
+//             break;
+//           }
+//         }
+//       }
+//     }
+//   }
+//   
+//   // find sinks
+//   
+//   return wrap(sinks);
+// }
 
 //' @export
 // [[Rcpp::export]]
