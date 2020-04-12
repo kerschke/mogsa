@@ -1,42 +1,32 @@
 #' @export
-generateDesign = function(fn, points.per.dimension=NULL, step.size=NULL) {
+generateDesign = function(fn, points.total = 1e6, points.per.dimension=NULL) {
   upper = smoof::getUpperBoxConstraints(fn)
   lower = smoof::getLowerBoxConstraints(fn)
-  n = smoof::getNumberOfParameters(fn)
+  p = smoof::getNumberOfParameters(fn)
   
-  if (!is.null(step.size) & !is.null(points.per.dimension)) {
-    stop('Not both step.size and points.per.dimension can be set!')
+  if (!is.null(points.total) & !is.null(points.per.dimension)) {
+    warning('points.per.dimension is set and will overwrite points.total')
   }
   
   l = list()
   step.sizes = c()
   
-  if (!is.null(step.size)) {
-    # Use step.size
-    for (i in 1:n) {
-      x.i = c(paste0("x", i))
-      l[[x.i]] = seq(lower[i], upper[i], step.size)
-      step.sizes = c(step.sizes, step.size)
-    }
-  } else {
-    # Use points.per.dimension
-    # Or calculate a default
-    if (length(points.per.dimension) == 0L) {
-      # default: approximately 1 Million points in total
-      # n = 2: 1001 per dimension
-      # n = 3: 101 per dimension
-      points.per.dimension = round((1e6 ** (1/n))) + 1
-      
-      points.per.dimension = rep(points.per.dimension, n)
-    } else if (length(points.per.dimension) == 1L) {
-      points.per.dimension = rep(points.per.dimension, n)
-    }
-    
-    for (i in 1:n) {
-      x.i = c(paste0("x", i))
-      l[[x.i]] = seq(lower[i], upper[i], length.out = points.per.dimension[i])
-      step.sizes = c(step.sizes, (upper[i] - lower[i])/(points.per.dimension[i] - 1))
-    }
+  if (!is.null(points.total)) {
+    # Use points.total to calculate points.per.dimension
+    ranges = upper - lower
+    base.length = (points.total ** (1/p))
+    factors = ranges / (prod(ranges) ** (1/p))
+    points.per.dimension = round(base.length * factors)
+  }
+  
+  if (length(points.per.dimension) == 1L) {
+    points.per.dimension = rep(points.per.dimension, p)
+  }
+  
+  for (i in 1:p) {
+    x.i = c(paste0("x", i))
+    l[[x.i]] = seq(lower[i], upper[i], length.out = points.per.dimension[i])
+    step.sizes = c(step.sizes, (upper[i] - lower[i])/(points.per.dimension[i] - 1))
   }
   
   grid = list()
