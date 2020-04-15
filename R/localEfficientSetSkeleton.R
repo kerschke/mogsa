@@ -1,55 +1,59 @@
 #' @export
-localEfficientSetSkeleton = function(grid, integration="fast") {
+localEfficientSetSkeleton = function(grid, integration="fast", with.basins = F) {
   less = list()
   
-  cat('1/3 Finding critical points ...\n')
+  cat('Finding critical points ...\n')
   
-  lnd.1 = locallyNondominatedCPP(matrix(grid$obj.space[,1]), grid$dims, T)
-  lnd.2 = locallyNondominatedCPP(matrix(grid$obj.space[,2]), grid$dims, T)
+  # lnd = lapply(1:ncol(grid$obj.space), function(i) {
+  #   locallyNondominatedCPP(matrix(grid$obj.space[,i]), grid$dims, T)
+  # })
   
-  minima = intersect(lnd.1, lnd.2)
-  
-  critical = getCriticalPointsCellCPP(grid$mo.grad, grid$so.grad, minima, grid$div, grid$dims)
+  critical = getCriticalPointsCellCPP(grid$mo.grad, grid$so.grad, grid$div, c(-1), grid$dims, FALSE)
 
   sinks = critical$sinks
-
-  ccs = connectedComponentsGrid(sinks, grid$dims)
-  valid.ccs.ids = (ccs != 0 & !(ccs %in% as.numeric(names(table(ccs)))[table(ccs) < 4]))
-  valid.ccs = ccs[valid.ccs.ids]
-  valid.sinks = sinks[valid.ccs.ids]
-
-  cat('2/3 Integrating vector field ...\n')
-  if (integration %in% c("fast")) {
-    integrated = computeCumulatedPathLengths(grid$dec.space, grid$mo.grad, valid.sinks, fix.diagonals = T, prec.vector.length = 0, prec.norm = 0)
+  
+  # less$so.min = list()
+  # less$so.min[[1]] = intersect(critical.1$sinks, sinks)
+  # less$so.min[[2]] = intersect(critical.2$sinks, sinks)
+  
+  cat('Integrating vector field ...\n')
+  if (integration == "fast") {
+    integrated = computeCumulatedPathLengths(grid$dec.space, grid$mo.grad, sinks, fix.diagonals = T, prec.vector.length = 0, prec.norm = 0)
   } else {
-    integrated = integrateVectorField(grid$mo.grad, grid$dims, valid.sinks)
+    integrated = integrateVectorField(grid$mo.grad, grid$dims, sinks)
   }
   
   less$height = integrated$height
-  
-  integration.sinks = sort(unique(integrated$last.visited))
+  # TODO  how can this even happen?!
+  less$height[is.na(less$height)] = 0
 
-  ccs = connectedComponentsGrid(integration.sinks, grid$dims)
-  valid.ccs.ids = (ccs != 0 & !(ccs %in% as.numeric(names(table(ccs)))[table(ccs) < 4]))
-  valid.ccs = ccs[valid.ccs.ids]
-  valid.sinks = integration.sinks[valid.ccs.ids]
-  
-  less$sinks = valid.sinks
-
-  cat('3/3 Calculating basins of attraction ...\n')
-  sink.to.basin = rep(-1, prod(grid$dims))
-  sink.to.basin[valid.sinks] = valid.ccs
-  
-  basins = sapply(1:length(integrated$last.visited), function(i) {
-    ifelse(integrated$last.visited[i] != -1, sink.to.basin[integrated$last.visited[i]], -1)
-  })
-  
-  less$basins = basins
-  
-  ridges = changeOfBasin(basins, grid$dims)
-  ridges = union(ridges, which(basins == -1))
-  
-  less$ridges = ridges
+  if (with.basins) {
+    integration.sinks = sort(unique(integrated$last.visited))
+    
+    ccs = connectedComponentsGrid(integration.sinks, grid$dims)
+    valid.ccs.ids = (ccs != 0 & !(ccs %in% as.numeric(names(table(ccs)))[table(ccs) < 4]))
+    valid.ccs = ccs[valid.ccs.ids]
+    valid.sinks = integration.sinks[valid.ccs.ids]
+    
+    less$sinks = valid.sinks
+    
+    cat('3/3 Calculating basins of attraction ...\n')
+    sink.to.basin = rep(-1, prod(grid$dims))
+    sink.to.basin[valid.sinks] = valid.ccs
+    
+    basins = sapply(1:length(integrated$last.visited), function(i) {
+      ifelse(integrated$last.visited[i] != -1, sink.to.basin[integrated$last.visited[i]], -1)
+    })
+    
+    less$basins = basins
+    
+    ridges = changeOfBasin(basins, grid$dims)
+    ridges = union(ridges, which(basins == -1))
+    
+    less$ridges = ridges
+  } else {
+    less$sinks = sinks
+  }
   
   return(less)
 }
