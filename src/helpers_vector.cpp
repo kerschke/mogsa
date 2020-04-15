@@ -343,19 +343,76 @@ NumericMatrix imputeBoundary(NumericMatrix moGradMat, List gradMatList, IntegerV
   return moGrad;
 }
 
+int isCritical(std::vector<NumericVector> vectors) {
+  LogicalVector positive(vectors[0].size(), false);
+  LogicalVector negative(vectors[0].size(), false);
+  
+  for (int id = 0; id < vectors.size(); id++) {
+    positive = positive | (vectors[id] >= 0);
+    negative = negative | (vectors[id] <= 0);
+  }
+  
+  if (is_true(any(negative & !positive)) ||
+      is_true(any(positive & !negative))) {
+    // cannot be critical
+    return -1;
+  }
+  
+  // for each vector ...
+  for (int vID = 0; vID < vectors.size(); vID++) {
+    bool pos = false;
+    bool neg = false;
+    bool zero = false;
+    
+    // for each vector ...
+    
+    for (int compID = 0; compID < vectors.size(); compID++) {
+      if (is_true(all(vectors[vID] == vectors[compID]))) continue;
+      
+      // TODO 3D
+      double orientation = relativeVectorOrientation(vectors[vID], vectors[compID]);
+      
+      // TODO >=,<= or >, < ?!
+      if (orientation > 0) {
+        pos = true;
+      }
+      if (orientation < 0) {
+        neg = true;
+      }
+      if (orientation == 0 && (sum(vectors[vID] * vectors[compID]) <= 0)) {
+        zero = true;
+      }
+    }
+    
+    if (!(pos && neg)) {
+      if (zero) {
+        // border case
+        return 0;
+      } else {
+        // not critical
+        return -1;
+      }
+    }
+  }
+  
+  // critical
+  return 1;
+}
+
 //' @export
 // [[Rcpp::export]]
-List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, IntegerVector localMinima, NumericVector div, IntegerVector dims) {
+List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, NumericVector div, IntegerVector lowerOrderCritical, IntegerVector dims, bool sinks_only) {
   int p = gradMatList.length();
   int d = dims.size();
   int n = div.length();
   
   std::vector<NumericMatrix> gradMat(p);
-  std::unordered_set<int> localMinimaSet(localMinima.begin(), localMinima.end());
-  
+
   for (int i = 0; i < p; i++) {
     gradMat[i] = as<NumericMatrix>(gradMatList(i));
   }
+  
+  std::set<int> loc_set(lowerOrderCritical.begin(), lowerOrderCritical.end());
   
   std::unordered_set<int> sinks;
   std::unordered_set<int> sources;
@@ -364,18 +421,19 @@ List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, Integer
   std::vector<int> sink_count(n, 0);
   std::vector<int> source_count(n, 0);
   std::vector<int> saddle_count(n, 0);
-  
+
   // anchor index of the current cell
   IntegerVector anchorIndex;
   IntegerVector neighbourIndex;
   IntegerMatrix cornerIndices(d + 1, d);
   IntegerVector cornerIDs(d + 1);
-  NumericMatrix allVectors(p*(d + 1), d);
-  
+  std::vector<NumericVector> allVectors(p*(d + 1));
+  std::vector<NumericVector> soVectors(d+1);
+
   // helpers
   NumericVector vec;
   NumericVector compVec;
-
+  
   for (int id = 1; id <= n; id++) {
     // loop over cell indices
     if (id % 1000 == 0) {
@@ -417,102 +475,175 @@ List getCriticalPointsCellCPP(NumericMatrix moGradMat, List gradMatList, Integer
       
       cornerIndices(d,_) = anchorIndex;
       
+      bool not_sink = false;
+      
       for (int cornerIndex = 0; cornerIndex < cornerIndices.nrow(); cornerIndex++) {
         cornerIDs(cornerIndex) = convertIndices2CellIDCPP(cornerIndices(cornerIndex,_), dims);
+        if (div(cornerIDs(cornerIndex)-1) > 0) {
+          not_sink = true;
+        }
+      }
+      
+      if (sinks_only && not_sink) {
+        // current simplex cannot be a sink
+        continue;
       }
       
       int last_id = 0;
-      for (int cornerIndex = 0; cornerIndex < cornerIndices.nrow(); cornerIndex++) {
-        for (int fID = 0; fID < p; fID++) {
-          allVectors(last_id++,_) = gradMat[fID](cornerIDs(cornerIndex) - 1,_);
+      
+      for (int fID = 0; fID < p; fID++) {
+        for (int cornerIndex = 0; cornerIndex < cornerIndices.nrow(); cornerIndex++) {
+          allVectors[last_id++] = gradMat[fID](cornerIDs(cornerIndex) - 1,_);
         }
       }
       
-      bool crit = true;
+      bool crit = false;
       
-      // for each gradient vector ...
+      // critical if MO is critical
       
-      for (int vID = 0; vID < allVectors.nrow(); vID++) {
-        vec = allVectors(vID,_);
-        bool pos = false;
-        bool neg = false;
-
-        // for each other gradient ...
-        
-        for (int compID = 0; compID < allVectors.nrow(); compID++) {
-          compVec = allVectors(compID,_);
-          if (is_true(all(compVec == vec))) continue;
-          
-          // TODO 3D
-          double orientation = relativeVectorOrientation(vec, compVec);
-          
-          // TODO >=,<= or >, < ?!
-          if (orientation > 0) {
-            pos = true;
-          }
-          if (orientation < 0) {
-            neg = true;
-          }
-        }
-        
-        if (!(pos && neg)) {
-          crit = false;
-          break;
-        }
+      int mo_critical = isCritical(allVectors);
+      if (mo_critical == 1 || (p == 1 && mo_critical == 0)) {
+        crit = true;
       }
       
-      // check any local minimum we might miss above
-      for (int i : cornerIDs) {
-        if (localMinimaSet.find(i) != localMinimaSet.end()) {
+      // critical if some corner is defined as critical
+      
+      for (int cornerID: cornerIDs) {
+        if (loc_set.find(cornerID) != loc_set.end()) {
           crit = true;
+        }
+      }
+      
+      // critical if all point have zero MOG (degenerate critical point)
+      
+      if (!crit) {
+        crit = true;
+        
+        for (int cornerID : cornerIDs) {
+          if (is_true(any(moGradMat(cornerID-1,_) != 0))) {
+            crit = false;
+            break;
+          }
         }
       }
       
       if (crit) {
         bool pos = false;
         bool neg = false;
+        bool zero = false;
 
         for (int i : cornerIDs) {
-          if (div(i-1) <= 0) {
+          if (div(i-1) < 0) {
             neg = true;
-          }
-          if (div(i-1) >= 0) {
+          } else if (div(i-1) > 0) {
             pos = true;
+          } else {
+            zero = true;
           }
         }
         
         for (int i : cornerIDs) {
           if (pos && !neg) {
             source_count[i-1]++;
-          } else if (neg && !pos) {
+          } else if ((neg && !pos) || (zero && !neg && !pos)) {
+            // neg && !pos --> regular critical
+            // all zero --> degenerate critical
             sink_count[i-1]++;
           } else {
             saddle_count[i-1]++;
           }
         }
       }
-    }
-    
-    // (2)
-    // boundary cases: also critical (sink) if MOG leaves legal area
-    
-    if (is_true(any(anchorIndex == 1)) || is_true(any(anchorIndex == dims))) {
-      for (int d_iter = 0; d_iter < d; d_iter++) {
-        if ((anchorIndex(d_iter) == 1            && moGradMat(id-1,d_iter) < 0) || // lower bound and negative-going component
-            (anchorIndex(d_iter) == dims(d_iter) && moGradMat(id-1,d_iter) > 0))   // upper bound and positive-going component
-          {
-          sinks.insert(id);
+      
+      // (2)
+      // boundary cases: also critical, if no descent direction along boundary exists with neighbours at boundary
+      
+      if (is_true(any(anchorIndex == 1)) || is_true(any(anchorIndex == dims))) {
+        for (int d_iter = 0; d_iter < d; d_iter++) {
+          if (anchorIndex(d_iter) == 1 || anchorIndex(d_iter) == dims(d_iter)) {
+            std::vector<int> boundaryIDs;
+            std::vector<NumericVector> boundaryVectors;
+            
+            for (int cornerIndex = 0; cornerIndex < cornerIndices.nrow(); cornerIndex++) {
+              if (cornerIndices(cornerIndex,d_iter) == anchorIndex(d_iter)) {
+                boundaryIDs.push_back(cornerIDs(cornerIndex));
+              }
+            }
+            
+            for (int id : boundaryIDs) {
+              for (int fID = 0; fID < p; fID++) {
+                boundaryVectors.push_back(gradMat[fID](id-1,_));
+              }
+            }
+            
+            bool boundary_critical = true;
+            
+            IntegerMatrix neighbourhood = getNeighbourhood(d, true);
+            
+            for (int n_i = 0; n_i < neighbourhood.nrow(); n_i++) {
+              if (neighbourhood(n_i, d_iter) == 0 && // move along boundary
+                  is_true(any(neighbourhood(n_i, _) != 0)) && // not anchorIndex
+                  convertIndices2CellIDCPP(anchorIndex + neighbourhood(n_i,_), dims) != -1 // descent direction needs to be legal, important for corners
+                    ) {
+                IntegerVector descentDirectionInt = neighbourhood(n_i,_);
+                NumericVector descentDirection = as<NumericVector>(descentDirectionInt);
+                bool descent_direction_legal = true;
+                
+                for (NumericVector boundaryVector : boundaryVectors) {
+                  if (sum(boundaryVector * descentDirection) <= 0) {
+                    descent_direction_legal = false;
+                  }
+                }
+                
+                if (descent_direction_legal) {
+                  boundary_critical = false;
+                  break;
+                }
+              }
+              
+            }
+            
+            if (boundary_critical) {
+              bool entering = false;
+              bool exiting = false;
+              
+              for (NumericVector v : boundaryVectors) {
+                if ((anchorIndex(d_iter) == 1 && v(d_iter) > 0) ||
+                    (anchorIndex(d_iter) == dims(d_iter) && v(d_iter) < 0)) {
+                  entering = true;
+                }
+                if ((anchorIndex(d_iter) == 1 && v(d_iter) < 0) ||
+                    (anchorIndex(d_iter) == dims(d_iter) && v(d_iter) > 0)) {
+                  exiting = true;
+                }
+              }
+              
+              for (int i : boundaryIDs) {
+                if (entering && !exiting) {
+                  source_count[i-1]++;
+                } else if (exiting && !entering) {
+                  sink_count[i-1]++;
+                } else {
+                  saddle_count[i-1]++;
+                }
+              }
+            }
+          }
         }
       }
     }
   }
   
   for (int id = 1; id <= n; id++) {
+    if (sink_count[id-1] > 0) {
+      sinks.insert(id);
+    }
+    
     if (source_count[id-1] > 0) {
       sources.insert(id);
-    } else if (sink_count[id-1] > 0) {
-      sinks.insert(id);
-    } else if (saddle_count[id-1] > 0) {
+    }
+    
+    if (saddle_count[id-1] > 0) {
       saddles.insert(id);
     }
   }
@@ -985,7 +1116,8 @@ IntegerVector locallyNondominatedCPP(NumericMatrix fnMat, IntegerVector dims, bo
     for (int r = 0; r < neighbours; r++) {
       neighbourIndices = indices + neighbourhood(r, _);
       if (is_true(any(neighbourIndices < 1)) ||
-          is_true(any(neighbourIndices > dims))) {
+          is_true(any(neighbourIndices > dims)) ||
+          is_true(all(neighbourIndices == indices))) {
         continue;
       }
       
@@ -1468,6 +1600,15 @@ NumericVector getTriObjGradientCPP(NumericVector g1, NumericVector g2, NumericVe
     return(zeros);
   }
   
+  std::vector<NumericVector> vectors;
+  vectors.push_back(g1);
+  vectors.push_back(g2);
+  vectors.push_back(g3);
+  
+  if (len == 2 && isCritical(vectors) == 1) {
+    return(zeros);
+  }
+  
   if (len >= 3) {
     NumericVector n = normalizeVectorCPP(crossProductCPP(g1-g2,g1-g3), 0);
     NumericVector moNorm = n * sum(n * g1); // n * (n dot g1) = n * (distance to plane created by g1,g2,g3)
@@ -1476,7 +1617,7 @@ NumericVector getTriObjGradientCPP(NumericVector g1, NumericVector g2, NumericVe
     double normAngle2 = computeAngleCPP(g1-moNorm, g3-moNorm, precNorm);
     double normAngle3 = computeAngleCPP(g2-moNorm, g3-moNorm, precNorm);
     
-    if (abs(normAngle1 + normAngle2 + normAngle3 - 360) < precAngle) {
+    if (abs(normAngle1 + normAngle2 + normAngle3 - 360) <= precAngle) {
       // norm is a convex combination of
       // single-objective gradients
       return(moNorm);
