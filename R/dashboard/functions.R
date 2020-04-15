@@ -1,6 +1,6 @@
 f1_1 = function(x) (x[1]**4 - 2*x[1]**2 + x[2]**2 + 1)
 f2_1 = function(x) ((x[1] + 0.5)**2 + (x[2]-2)**2)
-f3_1 = function(x) (x[1] ** 4 + 3 * (x[2] - 1) ** 2)
+f3_1 = function(x) ((x[1] + 0.25) ** 4 + 3 * (x[2] - 1) ** 2)
 f_2d2d = function(x) c(f1_1(x), f2_1(x))
 f_2d3d = function(x) c(f1_1(x), f2_1(x), f3_1(x))
 
@@ -29,7 +29,7 @@ fn = test.multitrap
 
 f1_2 = function(x) (x[1]**4 - 2*x[1]**2 + x[2]**2 + 1 + x[3] ** 2)
 f2_2 = function(x) ((x[1] + 0.5)**2 + (x[2]-2)**2 + (x[3] - 1) ** 4)
-f3_2 = function(x) (x[1] ** 4 + 3 * (x[2] - 1) ** 2 + (x[3] - 1) ** 2)
+f3_2 = function(x) ((x[1] + 0.25) ** 4 + 3 * (x[2] - 1) ** 2 + (x[3] - 1) ** 2)
 f_3d2d = function(x) c(f1_2(x), f2_2(x))
 f_3d3d = function(x) c(f1_2(x), f2_2(x), f3_2(x))
 test.3d.2d = smoof::makeMultiObjectiveFunction(name = "3D->2D Test Function", id = "", description = "", fn = f_3d2d,
